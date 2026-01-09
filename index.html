@@ -19,12 +19,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Firebase SDKs are imported inside the module script below -->
-
     <style>
         body {
             font-family: 'Fredoka', sans-serif;
-            background-color: #f0fdf4; /* Light green base */
+            background-color: #f0fdf4;
             background-image: radial-gradient(#dcfce7 2px, transparent 2px);
             background-size: 32px 32px;
             overscroll-behavior: none;
@@ -45,11 +43,9 @@
             transform: translateY(2px);
             box-shadow: 0 2px 0 0 rgba(0,0,0,0.1);
         }
-        /* Forma customizzata calice */
         .glass-container {
              clip-path: polygon(0% 0%, 100% 0%, 80% 80%, 80% 100%, 20% 100%, 20% 80%);
         }
-        /* Forma Bicchieri Colorati (più semplici, tipo cup) */
         .cup-shape {
             clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
         }
@@ -63,7 +59,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyBSf4LdAEqQVwusujux0TZVay3RhD3aoMY",
             authDomain: "wordle-amiconi.firebaseapp.com",
@@ -79,7 +74,6 @@
         const db = getFirestore(app);
         const appId = 'boardgames-v1';
 
-        // --- CONSTANTS ---
         const COLORS = [
             '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
             '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', 
@@ -98,14 +92,13 @@
             { id: 3, name: "Carte Crescenti", maxPlayers: 4, minPlayers: 1, icon: "fa-layer-group", desc: "Trova la sequenza 1-10." },
             { id: 4, name: "Indovina il Colore", maxPlayers: 4, minPlayers: 2, icon: "fa-palette", desc: "Il Leader crea la sequenza, tu indovini!" },
             { id: 5, name: "Punti e Linee", maxPlayers: 4, minPlayers: 2, icon: "fa-border-all", desc: "Chiudi i quadrati nell'arena!" },
-            { id: 6, name: "Punti e Linee Random", maxPlayers: 4, minPlayers: 2, icon: "fa-bezier-curve", desc: "Unisci i punti e chiudi le forme!" }
+            { id: 6, name: "Punti e Linee Random", maxPlayers: 4, minPlayers: 2, icon: "fa-bezier-curve", desc: "Unisci i punti e chiudi le forme!" },
+            { id: 7, name: "Mina Pericolosa", maxPlayers: 2, minPlayers: 2, icon: "fa-bomb", desc: "Nascondi le mine, non farle esplodere!" }
         ];
 
-        // --- UTILS ---
         const generateCode = () => Math.random().toString(36).substring(2, 7).toUpperCase();
         const rollDie = () => Math.floor(Math.random() * 6) + 1;
 
-        // --- COMPONENTS ---
         const Die = ({ value, shaking }) => {
             const dots = {
                 1: [[2,2]], 2: [[1,1], [3,3]], 3: [[1,1], [2,2], [3,3]],
@@ -119,7 +112,6 @@
             );
         };
 
-        // --- GAME 1: FIRST TO 1-10 ---
         const GameFirstTo10 = ({ G, myPlayerId, updateGame, players }) => {
             const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
             const isMyTurn = G.turnIndex === myPlayerIndex;
@@ -139,40 +131,31 @@
 
             const handleNumberClick = (num) => {
                 if (!isMyTurn || !G.rolled || finished) return;
-                
                 const d1 = G.dice[0];
                 const d2 = G.dice[1];
                 const sum = d1 + d2;
                 const myBoard = G.boards[myPlayerId] || [];
-
                 if (myBoard.includes(num)) return;
-
                 let newUsedDice = [...(G.usedDice || [])];
                 let isValidMove = false;
-
                 if (num === sum && newUsedDice.length === 0) {
                     newUsedDice = [0, 1];
                     isValidMove = true;
-                }
-                else if (num === d1 && !newUsedDice.includes(0)) {
+                } else if (num === d1 && !newUsedDice.includes(0)) {
                     newUsedDice.push(0);
                     isValidMove = true;
-                }
-                else if (num === d2 && !newUsedDice.includes(1)) {
+                } else if (num === d2 && !newUsedDice.includes(1)) {
                     newUsedDice.push(1);
                     isValidMove = true;
                 }
-
                 if (isValidMove) {
                     const newBoard = [...myBoard, num];
                     let msg = G.message;
                     let finishedList = G.finishedPlayers || [];
-
                     if (newBoard.length === 10) {
                         finishedList = [...finishedList, {id: myPlayerId, time: Date.now()}];
                         msg = `${currentPlayer.name} ha completato il tabellone!`;
                     }
-
                     updateGame({
                         boards: { ...G.boards, [myPlayerId]: newBoard },
                         usedDice: newUsedDice,
@@ -195,7 +178,6 @@
                 <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2">
                     <div className="bg-white rounded-2xl p-4 shadow-lg w-full mb-6 flex flex-col items-center sticky top-16 z-10 border border-gray-100">
                         <h2 className="text-xl font-bold mb-2 text-gray-700">Turno di: <span style={{color: currentPlayer?.color}}>{currentPlayer?.name}</span></h2>
-                        
                         <div className="flex gap-4 mb-4">
                             {G.dice.map((d, i) => (
                                 <div key={i} className={`transform transition-all ${G.usedDice?.includes(i) ? 'opacity-30 scale-90 grayscale' : 'opacity-100'}`}>
@@ -203,35 +185,26 @@
                                 </div>
                             ))}
                         </div>
-
                         {isMyTurn && !finished ? (
                             <div className="flex gap-2">
                                 {!G.rolled ? (
-                                    <button onClick={handleRoll} className="bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-md btn-press text-lg">
-                                        LANCIA DADI
-                                    </button>
+                                    <button onClick={handleRoll} className="bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-md btn-press text-lg">LANCIA DADI</button>
                                 ) : (
                                     <div className="flex flex-col items-center gap-2">
-                                        <button onClick={passTurn} className="bg-gray-800 text-white px-8 py-2 rounded-full font-bold shadow-md btn-press">
-                                            PASSA TURNO <i className="fa-solid fa-forward ml-2"></i>
-                                        </button>
+                                        <button onClick={passTurn} className="bg-gray-800 text-white px-8 py-2 rounded-full font-bold shadow-md btn-press">PASSA TURNO <i className="fa-solid fa-forward ml-2"></i></button>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <div className="text-sm text-gray-500 italic">
-                                {finished ? "Hai completato il tabellone!" : "In attesa..."}
-                            </div>
+                            <div className="text-sm text-gray-500 italic">{finished ? "Hai completato il tabellone!" : "In attesa..."}</div>
                         )}
                         <p className="mt-2 text-sm text-gray-500">{G.message}</p>
                     </div>
-
                     <div className="w-full grid gap-4">
                         {players.map((p, idx) => {
                             const isMe = p.id === myPlayerId;
                             const pBoard = G.boards[p.id] || [];
                             const isFinished = (G.finishedPlayers || []).find(fp => fp.id === p.id);
-                            
                             return (
                                 <div key={p.id} className={`bg-white rounded-xl p-3 shadow-md border-l-8 ${G.turnIndex === idx ? 'ring-2 ring-yellow-400' : ''}`} style={{ borderLeftColor: p.color }}>
                                     <div className="flex justify-between items-center mb-2">
@@ -249,18 +222,9 @@
                                                     key={num}
                                                     onClick={() => isMe ? handleNumberClick(num) : null}
                                                     disabled={!isMe || marked}
-                                                    className={`
-                                                        w-8 h-10 sm:w-10 sm:h-14 rounded-md flex items-center justify-center text-lg font-bold transition-all
-                                                        ${marked 
-                                                            ? `bg-gray-800 text-white opacity-50 cursor-not-allowed` 
-                                                            : isMe && isMyTurn && G.rolled && !finished
-                                                                ? 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 cursor-pointer shadow-sm active:scale-95' 
-                                                                : 'bg-gray-100 text-gray-300 cursor-default'}
-                                                    `}
+                                                    className={`w-8 h-10 sm:w-10 sm:h-14 rounded-md flex items-center justify-center text-lg font-bold transition-all ${marked ? `bg-gray-800 text-white opacity-50 cursor-not-allowed` : isMe && isMyTurn && G.rolled && !finished ? 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 cursor-pointer shadow-sm active:scale-95' : 'bg-gray-100 text-gray-300 cursor-default'}`}
                                                     style={marked ? {backgroundColor: p.color, color: 'white'} : {}}
-                                                >
-                                                    {marked ? 'X' : num}
-                                                </button>
+                                                >{marked ? 'X' : num}</button>
                                             );
                                         })}
                                     </div>
@@ -272,7 +236,6 @@
             );
         };
 
-        // --- GAME 2: GRAPE GOBLETS ---
         const GameGrapes = ({ G, myPlayerId, updateGame, players }) => {
             const [localRolling, setLocalRolling] = React.useState(false);
             const [localDieVal, setLocalDieVal] = React.useState(1);
@@ -299,11 +262,9 @@
                 const isCenter = glassIdx === 1;
                 const myGlassIdx = players[0].id === currentPlayer.id ? 0 : 2;
                 const myGlassFull = !G.glasses[myGlassIdx].dots.includes(null);
-                
                 if (!myGlassFull && glassIdx !== myGlassIdx) { alert("Devi riempire prima il tuo calice!"); return; }
                 if (glass.ownerId && glass.ownerId !== currentPlayer.id) return;
                 if (!glass.dots.includes(null)) return;
-
                 const newGlasses = [...G.glasses];
                 const newDots = [...glass.dots];
                 let fillIndex = -1;
@@ -315,12 +276,10 @@
                 if (fillIndex === -1) return;
                 newDots[fillIndex] = currentPlayer.id; 
                 newGlasses[glassIdx] = { ...glass, dots: newDots };
-
                 const newRemaining = G.remainingMoves - 1;
                 let nextTurn = G.turnIndex;
                 let resetRolled = G.rolled;
                 let resetMsg = G.message;
-
                 if (newRemaining === 0) {
                     nextTurn = (G.turnIndex + 1) % 2;
                     resetRolled = false;
@@ -388,12 +347,10 @@
             )
         };
 
-        // --- GAME 3: ASCENDING CARDS ---
         const GameCards = ({ G, myPlayerId, updateGame, players }) => {
             const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
             const isMyTurn = G.turnIndex === myPlayerIndex;
             const currentPlayer = players[G.turnIndex];
-
             const handleCardClick = (pId, cIdx) => {
                 if (!isMyTurn || pId !== myPlayerId || G.waitingReset) return;
                 const pData = G.playerData[myPlayerId];
@@ -405,7 +362,6 @@
                 let waitReset = false;
                 let msg = "";
                 newVisible[cIdx] = true;
-
                 if (cardValue === target) {
                     newTarget++;
                     msg = `Bravo! Ora cerca il ${newTarget}.`;
@@ -457,7 +413,6 @@
             );
         };
 
-        // --- GAME 4: GUESS THE COLOR ---
         const GameGuessColor = ({ G, myPlayerId, updateGame, players }) => {
             const currentRound = G.rounds[G.currentRoundIndex];
             if (G.phase === 'game_end') {
@@ -488,7 +443,6 @@
             } else if (G.phase === 'round_end') {
                 displayColors = G.secretCode; canInteract = false; statusText = "Round Completato!"; subText = `${guesserName} ha impiegato ${((G.lastRoundTime || 0)/1000).toFixed(2)}s`;
             }
-
             const handleSlotClick = (idx) => {
                 if (!canInteract) return;
                 if (selectedIndex === null) setSelectedIndex(idx);
@@ -538,108 +492,68 @@
             );
         };
 
-        // --- GAME 5: DOTS & BOXES (Grid) ---
         const GameDotsAndBoxes = ({ G, myPlayerId, updateGame, players }) => {
             const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
             const isMyTurn = G.turnIndex === myPlayerIndex;
             const currentPlayer = players[G.turnIndex];
-            
             const [localRolling, setLocalRolling] = React.useState(false);
             const [localDieVal, setLocalDieVal] = React.useState(1);
-
             const animateAndRoll = () => {
                 if (localRolling) return;
                 setLocalRolling(true);
                 setTimeout(() => {
                     const roll = Math.floor(Math.random() * 6) + 1;
-                    const moves = roll; // User requested EXACT roll = moves
-                    
                     setLocalDieVal(roll);
                     setLocalRolling(false);
-                    updateGame({
-                        currentRoll: roll,
-                        movesLeft: moves,
-                        rolled: true,
-                        message: `${currentPlayer.name} ha ${moves} mosse!`
-                    });
+                    updateGame({ currentRoll: roll, movesLeft: roll, rolled: true, message: `${currentPlayer.name} ha ${roll} mosse!` });
                 }, 800);
             };
-
             const gridWidth = G.gridSize.cols;
             const gridHeight = G.gridSize.rows;
-
-            // Helper to get line ID
             const getLineId = (type, r, c) => `${type}-${r}-${c}`;
-
             const handleLineClick = (type, r, c) => {
                 if (!isMyTurn || !G.rolled || G.movesLeft <= 0 || localRolling) return;
-                
                 const lineId = getLineId(type, r, c);
-                // Check if already taken
                 if (G.lines[lineId]) return;
-
                 const newLines = { ...G.lines, [lineId]: currentPlayer.id };
                 let pointsGained = 0;
                 const newBoxes = { ...G.boxes };
-
-                // Check Boxes
                 const checkBox = (br, bc) => {
                     if (br < 0 || bc < 0 || br >= gridHeight || bc >= gridWidth) return false;
                     const top = newLines[getLineId('h', br, bc)];
                     const bottom = newLines[getLineId('h', br+1, bc)];
                     const left = newLines[getLineId('v', br, bc)];
                     const right = newLines[getLineId('v', br, bc+1)];
-                    
                     if (top && bottom && left && right && !newBoxes[`${br}-${bc}`]) {
                         newBoxes[`${br}-${bc}`] = currentPlayer.id;
                         return true;
                     }
                     return false;
                 };
-
                 if (type === 'h') {
-                    if (checkBox(r, c)) pointsGained++;     // Box below line
-                    if (checkBox(r-1, c)) pointsGained++;   // Box above line
+                    if (checkBox(r, c)) pointsGained++;
+                    if (checkBox(r-1, c)) pointsGained++;
                 } else {
-                    if (checkBox(r, c)) pointsGained++;     // Box to right
-                    if (checkBox(r, c-1)) pointsGained++;   // Box to left
+                    if (checkBox(r, c)) pointsGained++;
+                    if (checkBox(r, c-1)) pointsGained++;
                 }
-
-                // Update scores
                 const newScores = { ...G.scores };
-                if (pointsGained > 0) {
-                    newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + pointsGained;
-                }
-
-                // Move logic
+                if (pointsGained > 0) newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + pointsGained;
                 const newMoves = G.movesLeft - 1;
                 let nextTurn = G.turnIndex;
                 let resetRolled = G.rolled;
                 let resetMsg = G.message;
-
                 const totalBoxes = gridWidth * gridHeight;
-                const filledBoxes = Object.keys(newBoxes).length;
-
-                if (filledBoxes === totalBoxes) {
-                    let winnerId = null;
-                    let maxScore = -1;
+                if (Object.keys(newBoxes).length === totalBoxes) {
+                    let winnerId = null; let maxScore = -1;
                     players.forEach(p => {
                         const s = newScores[p.id] || 0;
                         if (s > maxScore) { maxScore = s; winnerId = p.id; }
                         else if (s === maxScore) winnerId = 'draw';
                     });
-                    
-                    updateGame({
-                        lines: newLines,
-                        boxes: newBoxes,
-                        scores: newScores,
-                        movesLeft: 0,
-                        winner: winnerId,
-                        message: "Tutti i box sono chiusi!"
-                    });
+                    updateGame({ lines: newLines, boxes: newBoxes, scores: newScores, movesLeft: 0, winner: winnerId, message: "Tutti i box sono chiusi!" });
                     return;
                 }
-
                 if (newMoves <= 0) {
                     nextTurn = (G.turnIndex + 1) % players.length;
                     resetRolled = false;
@@ -648,74 +562,33 @@
                 } else {
                     resetMsg = `${currentPlayer.name}: ancora ${newMoves} mosse!`;
                 }
-
-                updateGame({
-                    lines: newLines,
-                    boxes: newBoxes,
-                    scores: newScores,
-                    movesLeft: newMoves,
-                    turnIndex: nextTurn,
-                    rolled: resetRolled,
-                    message: resetMsg
-                });
+                updateGame({ lines: newLines, boxes: newBoxes, scores: newScores, movesLeft: newMoves, turnIndex: nextTurn, rolled: resetRolled, message: resetMsg });
             };
-            
             const renderGrid = () => {
                 const elements = [];
                 for (let r = 0; r <= gridHeight; r++) {
                     const dotRow = [];
                     for (let c = 0; c <= gridWidth; c++) {
-                        dotRow.push(
-                            <div key={`dot-${r}-${c}`} className="w-2 h-2 sm:w-3 sm:h-3 bg-black rounded-full z-10 relative"></div>
-                        );
+                        dotRow.push(<div key={`dot-${r}-${c}`} className="w-2 h-2 sm:w-3 sm:h-3 bg-black rounded-full z-10 relative"></div>);
                         if (c < gridWidth) {
                             const lineId = getLineId('h', r, c);
                             const ownerId = G.lines[lineId];
                             const owner = players.find(p => p.id === ownerId);
-                            const color = owner ? owner.color : '#e5e7eb';
-                            
-                            dotRow.push(
-                                <div 
-                                    key={`h-${r}-${c}`}
-                                    onClick={() => handleLineClick('h', r, c)}
-                                    className={`h-2 sm:h-3 flex-1 mx-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`}
-                                    style={{ backgroundColor: color }}
-                                ></div>
-                            );
+                            dotRow.push(<div key={`h-${r}-${c}`} onClick={() => handleLineClick('h', r, c)} className={`h-2 sm:h-3 flex-1 mx-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`} style={{ backgroundColor: owner ? owner.color : '#e5e7eb' }}></div>);
                         }
                     }
                     elements.push(<div key={`row-dots-${r}`} className="flex items-center justify-between">{dotRow}</div>);
-
                     if (r < gridHeight) {
                         const boxRow = [];
                         for (let c = 0; c <= gridWidth; c++) {
                             const lineId = getLineId('v', r, c);
                             const ownerId = G.lines[lineId];
                             const owner = players.find(p => p.id === ownerId);
-                            const color = owner ? owner.color : '#e5e7eb';
-
-                            boxRow.push(
-                                <div 
-                                    key={`v-${r}-${c}`}
-                                    onClick={() => handleLineClick('v', r, c)}
-                                    className={`w-2 sm:w-3 h-8 sm:h-12 my-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`}
-                                    style={{ backgroundColor: color }}
-                                ></div>
-                            );
-
+                            boxRow.push(<div key={`v-${r}-${c}`} onClick={() => handleLineClick('v', r, c)} className={`w-2 sm:w-3 h-8 sm:h-12 my-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`} style={{ backgroundColor: owner ? owner.color : '#e5e7eb' }}></div>);
                             if (c < gridWidth) {
                                 const boxOwnerId = G.boxes[`${r}-${c}`];
                                 const boxOwner = players.find(p => p.id === boxOwnerId);
-                                
-                                boxRow.push(
-                                    <div key={`box-${r}-${c}`} className="flex-1 h-8 sm:h-12 flex items-center justify-center transition-all duration-500"
-                                         style={boxOwnerId ? {
-                                             background: `linear-gradient(135deg, ${boxOwner.color} 0%, rgba(255,255,255,0.8) 100%)`
-                                         } : {}}
-                                    >
-                                        {boxOwnerId && <span className="text-sm sm:text-xl drop-shadow-md">{boxOwner.avatar}</span>}
-                                    </div>
-                                );
+                                boxRow.push(<div key={`box-${r}-${c}`} className="flex-1 h-8 sm:h-12 flex items-center justify-center transition-all duration-500" style={boxOwnerId ? { background: `linear-gradient(135deg, ${boxOwner.color} 0%, rgba(255,255,255,0.8) 100%)` } : {}}>{boxOwnerId && <span className="text-sm sm:text-xl drop-shadow-md">{boxOwner.avatar}</span>}</div>);
                             }
                         }
                         elements.push(<div key={`row-boxes-${r}`} className="flex">{boxRow}</div>);
@@ -723,81 +596,51 @@
                 }
                 return elements;
             };
-
             return (
                 <div className="flex flex-col items-center w-full max-w-3xl mx-auto p-2">
-                    {/* Header */}
                     {G.winner ? (
-                         <div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">
-                            🎉 {players.find(p=>p.id===G.winner)?.name || "Pareggio"} Ha Vinto! 🎉
-                        </div>
+                         <div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">🎉 {players.find(p=>p.id===G.winner)?.name || "Pareggio"} Ha Vinto! 🎉</div>
                     ) : (
                         <div className="flex flex-col items-center w-full mb-4 sticky top-16 z-20">
                             <h2 className="text-xl font-bold bg-white px-4 py-2 rounded-full shadow mb-2">Turno di {currentPlayer.name}</h2>
                             <div className="flex items-center gap-4 bg-white p-2 rounded-xl shadow-lg border">
                                 <Die value={G.rolled ? G.currentRoll : localDieVal} shaking={localRolling} />
-                                {isMyTurn && !G.rolled && !localRolling && (
-                                    <button onClick={animateAndRoll} className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md btn-press">LANCIA</button>
-                                )}
-                                <div className="font-bold text-gray-500 w-32 text-center">
-                                    {G.rolled ? `Mosse: ${G.movesLeft}` : "Tira il dado!"}
-                                </div>
+                                {isMyTurn && !G.rolled && !localRolling && <button onClick={animateAndRoll} className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md btn-press">LANCIA</button>}
+                                <div className="font-bold text-gray-500 w-32 text-center">{G.rolled ? `Mosse: ${G.movesLeft}` : "Tira il dado!"}</div>
                             </div>
                         </div>
                     )}
-
-                    {/* Scores */}
                     <div className="flex flex-wrap justify-center gap-4 mb-4 w-full">
                         {players.map(p => (
                             <div key={p.id} className={`flex items-center gap-2 px-3 py-1 rounded-full border-2 ${G.scores[p.id] > 0 ? 'bg-white' : 'bg-gray-100'}`} style={{borderColor: p.color}}>
-                                <span>{p.avatar}</span>
-                                <span className="font-bold">{G.scores[p.id] || 0}</span>
+                                <span>{p.avatar}</span><span className="font-bold">{G.scores[p.id] || 0}</span>
                             </div>
                         ))}
                     </div>
-
-                    {/* Arena */}
-                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl border-4 border-gray-100 w-full select-none" style={{touchAction: 'none'}}>
-                        {renderGrid()}
-                    </div>
+                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl border-4 border-gray-100 w-full select-none" style={{touchAction: 'none'}}>{renderGrid()}</div>
                 </div>
             );
         };
 
-        // --- GAME 6: RANDOMIZED DOTS & BOXES (True Random + Cycle Detection) ---
         const GameRandomDots = ({ G, myPlayerId, updateGame, players }) => {
             const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
             const isMyTurn = G.turnIndex === myPlayerIndex;
             const currentPlayer = players[G.turnIndex];
-            
             const [localRolling, setLocalRolling] = React.useState(false);
             const [localDieVal, setLocalDieVal] = React.useState(1);
-            
-            // Drag state
             const [dragStart, setDragStart] = React.useState(null); 
             const [dragCurrent, setDragCurrent] = React.useState(null); 
             const svgRef = React.useRef(null);
 
-            // --- GENERAZIONE NODI (POISSON-DISC LIKE) ---
             React.useEffect(() => {
                 if (!G.nodes || G.nodes.length === 0) {
-                    const width = 350; // Viewbox width
-                    const height = 450;
-                    const radius = 35; // Min dist
-                    const newNodes = [];
-                    let attempts = 0;
-                    const maxNodes = 35;
-
+                    const width = 350; const height = 450; const radius = 35;
+                    const newNodes = []; let attempts = 0; const maxNodes = 35;
                     while(newNodes.length < maxNodes && attempts < 2000) {
                         const x = 30 + Math.random() * (width - 60);
                         const y = 30 + Math.random() * (height - 60);
                         let valid = true;
-                        for(let n of newNodes) {
-                            if (Math.hypot(n.x - x, n.y - y) < radius) {
-                                valid = false;
-                                break;
-                            }
-                        }
+                        for(let n of newNodes) if (Math.hypot(n.x - x, n.y - y) < radius) { valid = false; break; }
                         if (valid) newNodes.push({ id: newNodes.length, x, y });
                         attempts++;
                     }
@@ -805,7 +648,7 @@
                 }
             }, []);
 
-            if (!G.nodes) return <div>Generazione caos...</div>;
+            if (!G.nodes || G.nodes.length === 0) return <div className="text-center p-10 font-bold">Generazione caos in corso...</div>;
 
             const animateAndRoll = () => {
                 if (localRolling) return;
@@ -814,69 +657,46 @@
                     const roll = Math.floor(Math.random() * 6) + 1;
                     setLocalDieVal(roll);
                     setLocalRolling(false);
-                    updateGame({
-                        currentRoll: roll,
-                        movesLeft: roll,
-                        rolled: true,
-                        message: `${currentPlayer.name} ha ${roll} mosse!`
-                    });
+                    updateGame({ currentRoll: roll, movesLeft: roll, rolled: true, message: `${currentPlayer.name} ha ${roll} mosse!` });
                 }, 800);
             };
 
-            // --- UTILS PER GEOMETRIA ---
             const getCoordinates = (e) => {
                 if (!svgRef.current) return { x: 0, y: 0 };
                 const svg = svgRef.current;
-                const CTM = svg.getScreenCTM();
-                let clientX, clientY;
-                if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-                else if (e.changedTouches) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
-                else { clientX = e.clientX; clientY = e.clientY; }
-                if (CTM) return { x: (clientX - CTM.e) / CTM.a, y: (clientY - CTM.f) / CTM.d };
-                return { x: 0, y: 0 };
+                const pt = svg.createSVGPoint();
+                if (e.touches && e.touches.length > 0) { pt.x = e.touches[0].clientX; pt.y = e.touches[0].clientY; }
+                else if (e.changedTouches && e.changedTouches.length > 0) { pt.x = e.changedTouches[0].clientX; pt.y = e.changedTouches[0].clientY; }
+                else { pt.x = e.clientX; pt.y = e.clientY; }
+                const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+                return { x: svgP.x, y: svgP.y };
             };
 
-            // Controlla se due segmenti (p1-q1) e (p2-q2) si intersecano
             const orientation = (p, q, r) => {
                 const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
                 if (val === 0) return 0;
                 return (val > 0) ? 1 : 2;
             };
             const doIntersect = (p1, q1, p2, q2) => {
-                const o1 = orientation(p1, q1, p2);
-                const o2 = orientation(p1, q1, q2);
-                const o3 = orientation(p2, q2, p1);
-                const o4 = orientation(p2, q2, q1);
+                const o1 = orientation(p1, q1, p2); const o2 = orientation(p1, q1, q2);
+                const o3 = orientation(p2, q2, p1); const o4 = orientation(p2, q2, q1);
                 if (o1 !== o2 && o3 !== o4) return true;
                 return false;
             };
 
-            // --- ALGORITMO CICLI (BFS SHORTEST PATH) ---
             const findShortestCycle = (startId, endId, currentEdges) => {
-                // Costruisci grafo adiacenze
                 const adj = {};
                 currentEdges.forEach(e => {
-                    if(!adj[e.u]) adj[e.u] = [];
-                    if(!adj[e.v]) adj[e.v] = [];
-                    adj[e.u].push(e.v);
-                    adj[e.v].push(e.u);
+                    if(!adj[e.u]) adj[e.u] = []; if(!adj[e.v]) adj[e.v] = [];
+                    adj[e.u].push(e.v); adj[e.v].push(e.u);
                 });
-
-                // BFS per trovare percorso da endId a startId
-                const queue = [[endId, [endId]]];
-                const visited = new Set();
-                visited.add(endId);
-
+                const queue = [[endId, [endId]]]; const visited = new Set(); visited.add(endId);
                 while(queue.length > 0) {
                     const [node, path] = queue.shift();
-                    if (node === startId) return path; // Ciclo trovato!
-
+                    if (node === startId) return path;
                     const neighbors = adj[node] || [];
                     for(let neighbor of neighbors) {
-                        if (!visited.has(neighbor)) {
-                            visited.add(neighbor);
-                            queue.push([neighbor, [...path, neighbor]]);
-                        }
+                        if (!visited.has(neighbor)) { visited.add(neighbor); queue.push([neighbor, [...path, neighbor]]); }
                     }
                 }
                 return null;
@@ -884,98 +704,57 @@
 
             const attemptConnection = (n1, n2) => {
                 if (!isMyTurn || !G.rolled || G.movesLeft <= 0) return;
-
-                // 1. Esiste già?
-                const u = Math.min(n1.id, n2.id);
-                const v = Math.max(n1.id, n2.id);
+                const u = Math.min(n1.id, n2.id); const v = Math.max(n1.id, n2.id);
                 if (G.edges.some(e => e.u === u && e.v === v)) return;
-
-                // 2. Interseca altre linee?
                 for (let e of G.edges) {
-                    const nA = G.nodes[e.u];
-                    const nB = G.nodes[e.v];
-                    // Escludi linee che condividono un vertice (non sono intersezioni)
+                    const nA = G.nodes[e.u]; const nB = G.nodes[e.v];
                     if (nA.id === n1.id || nA.id === n2.id || nB.id === n1.id || nB.id === n2.id) continue;
-                    if (doIntersect(n1, n2, nA, nB)) {
-                         alert("Non puoi incrociare le linee!");
-                         return;
-                    }
+                    if (doIntersect(n1, n2, nA, nB)) { alert("Non puoi incrociare le linee!"); return; }
                 }
-
-                // 3. Controllo Cicli (Prima di aggiungere edge)
                 const cyclePath = findShortestCycle(u, v, G.edges);
-                
-                // Commit
                 const newEdges = [...G.edges, { u, v, ownerId: currentPlayer.id }];
                 const newPolygons = [...G.polygons];
                 const newScores = { ...G.scores };
                 let pointsGained = 0;
-
                 if (cyclePath) {
-                    // Crea poligono
-                    pointsGained = 1;
-                    newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + 1;
-                    newPolygons.push({
-                        points: cyclePath, // array of IDs
-                        ownerId: currentPlayer.id
-                    });
+                    pointsGained = 1; newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + 1;
+                    newPolygons.push({ points: cyclePath, ownerId: currentPlayer.id });
                 }
-
-                // Fine Turno?
                 const newMoves = G.movesLeft - 1;
-                let nextTurn = G.turnIndex;
-                let resetRolled = G.rolled;
-                let resetMsg = G.message;
-
-                // Condizione vittoria semplice (es. punteggio 10 o tempo, qui infinito finché non si stufano)
-                // Ma per ora lasciamo scorrere
-
+                let nextTurn = G.turnIndex; let resetRolled = G.rolled; let resetMsg = G.message;
                 if (newMoves <= 0) {
-                    nextTurn = (G.turnIndex + 1) % players.length;
-                    resetRolled = false;
-                    resetMsg = `Turno di ${players[nextTurn].name}`;
-                    setLocalDieVal(1);
+                    nextTurn = (G.turnIndex + 1) % players.length; resetRolled = false;
+                    resetMsg = `Turno di ${players[nextTurn].name}`; setLocalDieVal(1);
                 } else {
                     resetMsg = `${currentPlayer.name}: ancora ${newMoves} mosse!`;
                 }
-
-                updateGame({
-                    edges: newEdges,
-                    polygons: newPolygons,
-                    scores: newScores,
-                    movesLeft: newMoves,
-                    turnIndex: nextTurn,
-                    rolled: resetRolled,
-                    message: pointsGained > 0 ? "Ciclo Chiuso! +1 Punto!" : resetMsg
-                });
+                updateGame({ edges: newEdges, polygons: newPolygons, scores: newScores, movesLeft: newMoves, turnIndex: nextTurn, rolled: resetRolled, message: pointsGained > 0 ? "Ciclo Chiuso! +1 Punto!" : resetMsg });
             };
 
             const handleStart = (n, e) => {
                 if (!isMyTurn || !G.rolled || G.movesLeft <= 0) return;
                 e.stopPropagation();
+                if (e.cancelable) e.preventDefault();
                 setDragStart(n);
                 setDragCurrent({ x: n.x, y: n.y });
             };
             const handleMove = (e) => {
                 if (!dragStart) return;
-                const coords = getCoordinates(e);
-                setDragCurrent(coords);
+                if (e.cancelable) e.preventDefault();
+                setDragCurrent(getCoordinates(e));
             };
             const handleEnd = (e) => {
                 if (!dragStart) return;
+                if (e.cancelable) e.preventDefault();
                 const coords = getCoordinates(e);
-                // Find target node (simple distance check)
-                const target = G.nodes.find(n => Math.hypot(n.x - coords.x, n.y - coords.y) < 40);
-                if (target && target.id !== dragStart.id) {
-                    attemptConnection(dragStart, target);
-                }
-                setDragStart(null);
-                setDragCurrent(null);
+                const threshold = 40;
+                const target = G.nodes.find(n => Math.hypot(n.x - coords.x, n.y - coords.y) < threshold);
+                if (target && target.id !== dragStart.id) { attemptConnection(dragStart, target); }
+                setDragStart(null); setDragCurrent(null);
             };
 
             return (
                 <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2">
-                    {/* UI */}
                     <div className="flex flex-col items-center w-full mb-4 sticky top-16 z-20">
                         <h2 className="text-xl font-bold bg-white px-4 py-2 rounded-full shadow mb-2">Turno di {currentPlayer.name}</h2>
                         <div className="flex items-center gap-4 bg-white p-2 rounded-xl shadow-lg border">
@@ -984,68 +763,120 @@
                             <div className="font-bold text-gray-500 w-32 text-center">{G.rolled ? `Mosse: ${G.movesLeft}` : "Tira il dado!"}</div>
                         </div>
                     </div>
-
                     <div className="flex flex-wrap justify-center gap-4 mb-4 w-full">
                         {players.map(p => (
                             <div key={p.id} className={`flex items-center gap-2 px-3 py-1 rounded-full border-2 ${G.scores[p.id] > 0 ? 'bg-white' : 'bg-gray-100'}`} style={{borderColor: p.color}}>
-                                <span>{p.avatar}</span>
-                                <span className="font-bold">{G.scores[p.id] || 0}</span>
+                                <span>{p.avatar}</span><span className="font-bold">{G.scores[p.id] || 0}</span>
                             </div>
                         ))}
                     </div>
-
                     <div className="bg-white rounded-xl shadow-2xl border-4 border-gray-100 w-full overflow-hidden select-none" style={{touchAction: 'none'}}>
-                         <svg 
-                            ref={svgRef}
-                            width="100%" 
-                            height="500" 
-                            viewBox="0 0 350 450"
-                            onMouseMove={handleMove}
-                            onMouseUp={handleEnd}
-                            onTouchMove={handleMove}
-                            onTouchEnd={handleEnd}
-                            style={{cursor: isMyTurn && G.rolled ? 'crosshair' : 'default'}}
-                        >
-                            {/* Poligoni */}
+                         <svg ref={svgRef} width="100%" height="500" viewBox="0 0 350 450" onMouseMove={handleMove} onMouseUp={handleEnd} onTouchMove={handleMove} onTouchEnd={handleEnd} style={{cursor: isMyTurn && G.rolled ? 'crosshair' : 'default'}}>
                             {G.polygons && G.polygons.map((poly, i) => {
                                 const owner = players.find(p => p.id === poly.ownerId);
-                                const pts = poly.points.map(pid => {
-                                    const n = G.nodes.find(node => node.id === pid);
-                                    return `${n.x},${n.y}`;
-                                }).join(' ');
+                                const pts = poly.points.map(pid => { const n = G.nodes.find(node => node.id === pid); return `${n.x},${n.y}`; }).join(' ');
                                 return <polygon key={i} points={pts} fill={owner ? owner.color : '#ccc'} fillOpacity="0.4" stroke="none" />;
                             })}
-
-                            {/* Linee */}
                             {G.edges && G.edges.map((e, i) => {
-                                const n1 = G.nodes.find(n => n.id === e.u);
-                                const n2 = G.nodes.find(n => n.id === e.v);
+                                const n1 = G.nodes.find(n => n.id === e.u); const n2 = G.nodes.find(n => n.id === e.v);
                                 const owner = players.find(p => p.id === e.ownerId);
                                 return <line key={i} x1={n1.x} y1={n1.y} x2={n2.x} y2={n2.y} stroke={owner ? owner.color : '#333'} strokeWidth="4" strokeLinecap="round" />;
                             })}
-
-                            {/* Linea Drag */}
                             {dragStart && dragCurrent && <line x1={dragStart.x} y1={dragStart.y} x2={dragCurrent.x} y2={dragCurrent.y} stroke="#888" strokeWidth="3" strokeDasharray="5,5" />}
-
-                            {/* Nodi */}
                             {G.nodes.map((n) => (
-                                <circle 
-                                    key={n.id}
-                                    cx={n.x} cy={n.y} r="10"
-                                    fill={dragStart && dragStart.id === n.id ? "#000" : "#555"}
-                                    onMouseDown={(e) => handleStart(n, e)}
-                                    onTouchStart={(e) => handleStart(n, e)}
-                                    className="hover:r-12 transition-all cursor-pointer"
-                                />
+                                <circle key={n.id} cx={n.x} cy={n.y} r="10" fill={dragStart && dragStart.id === n.id ? "#000" : "#555"} onMouseDown={(e) => handleStart(n, e)} onTouchStart={(e) => handleStart(n, e)} className="transition-all cursor-pointer" />
                             ))}
                         </svg>
                     </div>
-                     <div className="text-center text-gray-400 mt-2 text-sm italic">Chiudi qualsiasi forma (triangoli, quadrati...) per fare punti!</div>
+                     <div className="text-center text-gray-400 mt-2 text-sm italic">Chiudi qualsiasi forma per fare punti!</div>
                 </div>
             );
         };
 
-        // --- MAIN APP ---
+        const GameMines = ({ G, myPlayerId, updateGame, players }) => {
+            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
+            const isMyTurn = G.turnIndex === myPlayerIndex;
+            const currentPlayer = players[G.turnIndex];
+            const [localMines, setLocalMines] = React.useState([]);
+            const handleSetupClick = (idx) => {
+                if (localMines.includes(idx)) setLocalMines(localMines.filter(m => m !== idx));
+                else if (localMines.length < 3) setLocalMines([...localMines, idx]);
+            };
+            const confirmSetup = () => {
+                if (localMines.length !== 3) return;
+                const newBoards = { ...G.boards, [myPlayerId]: { mines: localMines, revealed: [] } };
+                const newSetupDone = [...G.setupDone, myPlayerId];
+                let nextPhase = G.phase;
+                let msg = "In attesa dell'avversario...";
+                if (newSetupDone.length === players.length) { nextPhase = 'playing'; msg = `Inizia ${players[0].name}!`; }
+                updateGame({ boards: newBoards, setupDone: newSetupDone, phase: nextPhase, message: msg });
+            };
+            const handlePlayClick = (targetId, idx) => {
+                if (!isMyTurn || G.phase !== 'playing') return;
+                const targetBoard = G.boards[targetId];
+                if (targetBoard.revealed.includes(idx)) return;
+                const newRevealed = [...targetBoard.revealed, idx];
+                const newBoards = { ...G.boards, [targetId]: { ...targetBoard, revealed: newRevealed } };
+                const isMine = targetBoard.mines.includes(idx);
+                let newLives = { ...G.lives };
+                let msg = isMine ? "💥 BOOM! Hai perso una vita!" : "😅 Salvo!";
+                let winner = null;
+                if (isMine) {
+                    newLives[myPlayerId] = (newLives[myPlayerId] || 3) - 1;
+                    if (newLives[myPlayerId] <= 0) { winner = targetId; msg = `💀 ${currentPlayer.name} è esploso! Vince ${players.find(p=>p.id===targetId).name}!`; }
+                }
+                updateGame({ boards: newBoards, lives: newLives, turnIndex: (G.turnIndex + 1) % players.length, message: msg, winner: winner });
+            };
+            if (G.phase === 'setup') {
+                const isDone = G.setupDone.includes(myPlayerId);
+                return (
+                    <div className="flex flex-col items-center w-full p-4">
+                        <h2 className="text-2xl font-bold mb-4 text-center">Posiziona le tue 3 mine!</h2>
+                        {!isDone ? (
+                            <div className="grid grid-cols-5 gap-2 mb-4">
+                                {Array(20).fill(null).map((_, i) => (
+                                    <div key={i} onClick={() => handleSetupClick(i)} className={`w-12 h-16 sm:w-16 sm:h-24 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${localMines.includes(i) ? 'bg-red-500 border-red-700 text-white' : 'bg-gray-200 border-gray-400 hover:bg-gray-300'}`}>{localMines.includes(i) && <i className="fa-solid fa-bomb text-2xl"></i>}</div>
+                                ))}
+                            </div>
+                        ) : <div className="text-gray-500 italic mb-4 animate-pulse">Setup completato. Attendi...</div>}
+                        {!isDone && <button onClick={confirmSetup} disabled={localMines.length !== 3} className={`px-8 py-3 rounded-full font-bold shadow-lg btn-press ${localMines.length === 3 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>PRONTO ({localMines.length}/3)</button>}
+                         <div className="mt-4 text-sm text-gray-500">Giocatori pronti: {G.setupDone.length}/{players.length}</div>
+                    </div>
+                );
+            }
+            if (G.winner) return <div className="flex flex-col items-center p-10"><div className="text-4xl mb-4">💀</div><div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">{G.message}</div><div className="text-gray-500">Partita terminata</div></div>;
+            const targetPlayer = players.find(p => p.id !== currentPlayer.id);
+            const isMe = currentPlayer.id === myPlayerId;
+            const boardOwnerId = isMe ? targetPlayer.id : myPlayerId;
+            const boardData = G.boards[boardOwnerId];
+            return (
+                <div className="flex flex-col items-center w-full max-w-2xl mx-auto p-2">
+                    <div className="flex justify-between w-full bg-white p-4 rounded-xl shadow mb-6 sticky top-0 z-10">
+                        {players.map(p => (
+                            <div key={p.id} className={`flex flex-col items-center ${currentPlayer.id === p.id ? 'opacity-100 scale-110' : 'opacity-60'}`}>
+                                <div className="text-2xl">{p.avatar}</div><div className="font-bold text-xs">{p.name}</div>
+                                <div className="flex gap-1 mt-1">{Array(3).fill(null).map((_, i) => <i key={i} className={`fa-solid fa-heart text-xs ${i < (G.lives[p.id]) ? 'text-red-500' : 'text-gray-300'}`}></i>)}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="text-center mb-4"><h2 className="text-xl font-bold">{isMe ? "Tocca a te! Trova una casella sicura" : `Turno di ${currentPlayer.name}...`}</h2><p className={`font-bold ${G.message.includes("BOOM") ? 'text-red-600 animate-bounce' : 'text-gray-500'}`}>{G.message}</p></div>
+                    <div className="grid grid-cols-5 gap-2 sm:gap-4 p-4 bg-gray-100 rounded-xl border-4 border-gray-300">
+                        {Array(20).fill(null).map((_, i) => {
+                            const isRev = boardData.revealed.includes(i); const isMin = boardData.mines.includes(i);
+                            const showMin = !isMe && isMin && !isRev;
+                            return (
+                                <button key={i} onClick={() => isMe ? handlePlayClick(boardOwnerId, i) : null} disabled={!isMe || isRev} className={`w-12 h-16 sm:w-16 sm:h-24 rounded-lg flex items-center justify-center text-2xl transition-all duration-300 relative ${isRev ? (isMin ? 'bg-red-500 border-red-700' : 'bg-green-100 border-green-300') : (isMe ? 'bg-white border-b-4 border-gray-300 hover:mt-1 hover:border-b-0 active:scale-95' : 'bg-white border-gray-200 cursor-default')} ${showMin ? 'opacity-90 ring-2 ring-red-200' : ''}`}>
+                                    {isRev && isMin && <i className="fa-solid fa-bomb text-white animate-ping"></i>}
+                                    {isRev && !isMin && <i className="fa-solid fa-check text-green-500"></i>}
+                                    {showMin && <i className="fa-solid fa-bomb text-red-200 text-sm absolute top-1 right-1"></i>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [user, setUser] = React.useState(null);
             const [localState, setLocalState] = React.useState(null);
@@ -1078,39 +909,16 @@
 
             const createLobby = async (modeId) => {
                 if (isOnline && !user) { alert("Attendi il caricamento dell'account..."); return; }
-
                 let initial = { turnIndex: 0, message: "Inizia!", finishedPlayers: [] };
-                
-                if (modeId === 1) {
-                    initial = { ...initial, boards: {}, dice: [1,1], rolled: false, usedDice: [] };
-                } else if (modeId === 2) {
-                    initial = { ...initial, glasses: [], centerContributors: {}, remainingMoves: 0 };
-                } else if (modeId === 3) {
-                    initial = { ...initial, playerData: {}, waitingReset: false };
-                } else if (modeId === 4) {
-                    initial = { ...initial, phase: 'setup', secretCode: [...GAME_COLORS], currentGuess: [], results: [], rounds: [], currentRoundIndex: 0 };
-                } else if (modeId === 5) {
-                    initial = { ...initial, lines: {}, boxes: {}, scores: {}, gridSize: { rows: 4, cols: 4 }, movesLeft: 0, rolled: false, currentRoll: 1 };
-                } else if (modeId === 6) {
-                    initial = { 
-                        ...initial, 
-                        edges: [], // {u, v, ownerId}
-                        polygons: [], // {points: [id...], ownerId}
-                        scores: {},
-                        nodes: [], // populated later
-                        movesLeft: 0,
-                        rolled: false,
-                        currentRoll: 1
-                    };
-                }
-                
+                if (modeId === 1) initial = { ...initial, boards: {}, dice: [1,1], rolled: false, usedDice: [] };
+                else if (modeId === 2) initial = { ...initial, glasses: [], remainingMoves: 0 };
+                else if (modeId === 3) initial = { ...initial, playerData: {}, waitingReset: false };
+                else if (modeId === 4) initial = { ...initial, phase: 'setup', secretCode: [...GAME_COLORS], currentGuess: [], results: [], rounds: [], currentRoundIndex: 0 };
+                else if (modeId === 5) initial = { ...initial, lines: {}, boxes: {}, scores: {}, gridSize: { rows: 4, cols: 4 }, movesLeft: 0, rolled: false, currentRoll: 1 };
+                else if (modeId === 6) initial = { ...initial, edges: [], polygons: [], scores: {}, nodes: [], movesLeft: 0, rolled: false, currentRoll: 1 };
+                else if (modeId === 7) initial = { phase: 'setup', boards: {}, lives: {}, setupDone: [], turnIndex: 0, message: "Posiziona 3 mine sul tuo campo!" };
                 const hostId = user ? user.uid : 'local_host';
-                const newLobby = {
-                    hostId: hostId, modeId, status: 'waiting', createdAt: Date.now(),
-                    players: [{ id: hostId, name: profile.name, color: profile.color, avatar: profile.avatar }],
-                    gameState: initial
-                };
-
+                const newLobby = { hostId: hostId, modeId, status: 'waiting', createdAt: Date.now(), players: [{ id: hostId, name: profile.name, color: profile.color, avatar: profile.avatar }], gameState: initial };
                 if (isOnline) {
                     const code = generateCode();
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', code), newLobby);
@@ -1123,8 +931,7 @@
             };
 
             const joinLobby = async () => {
-                if (!joinCode) return;
-                if (!user) { alert("Attendi caricamento..."); return; }
+                if (!joinCode || !user) return;
                 const ref = doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', joinCode.toUpperCase());
                 const snap = await getDoc(ref);
                 if (snap.exists() && snap.data().status === 'waiting' && snap.data().players.length < MODES.find(m=>m.id===snap.data().modeId).maxPlayers) {
@@ -1134,39 +941,26 @@
             };
 
             const startGame = async () => {
-                let finalState = { ...gameData.gameState };
-                const playerCount = gameData.players.length;
-
-                if (gameData.modeId === 1) {
-                    gameData.players.forEach(p => finalState.boards[p.id] = []);
-                } else if (gameData.modeId === 2) {
+                let finalState = { ...gameData.gameState }; const playerCount = gameData.players.length;
+                if (gameData.modeId === 1) gameData.players.forEach(p => finalState.boards[p.id] = []);
+                else if (gameData.modeId === 2) {
                     if (playerCount !== 2) { alert("Servono 2 giocatori"); return; }
-                    const emptyGlass = Array(13).fill(null);
-                    finalState.glasses = [ { ownerId: gameData.players[0].id, dots: [...emptyGlass], total: 13 }, { ownerId: null, dots: [...emptyGlass], total: 13 }, { ownerId: gameData.players[1].id, dots: [...emptyGlass], total: 13 } ];
-                } else if (gameData.modeId === 3) {
-                    gameData.players.forEach(p => {
-                        const d = [1,2,3,4,5,6,7,8,9,10].sort(() => Math.random() - 0.5);
-                        finalState.playerData[p.id] = { cards: d, visible: Array(10).fill(false), target: 1 };
-                    });
-                } else if (gameData.modeId === 4) {
+                    const empty = Array(13).fill(null);
+                    finalState.glasses = [ { ownerId: gameData.players[0].id, dots: [...empty] }, { ownerId: null, dots: [...empty] }, { ownerId: gameData.players[1].id, dots: [...empty] } ];
+                } else if (gameData.modeId === 3) gameData.players.forEach(p => { finalState.playerData[p.id] = { cards: [1,2,3,4,5,6,7,8,9,10].sort(()=>Math.random()-0.5), visible: Array(10).fill(false), target: 1 }; });
+                else if (gameData.modeId === 4) {
                     const ps = gameData.players;
-                    const rounds = ps.map((p, i) => { const leaderIdx = (i - 1 + ps.length) % ps.length; return { guesserId: p.id, leaderId: ps[leaderIdx].id }; });
-                    finalState.rounds = rounds; finalState.currentRoundIndex = 0; finalState.phase = 'setup'; finalState.secretCode = [...GAME_COLORS]; finalState.currentGuess = []; finalState.results = [];
-                } else if (gameData.modeId === 5) {
-                    let size = 6;
-                    if (playerCount === 3) size = 7;
-                    if (playerCount >= 4) size = 8;
+                    finalState.rounds = ps.map((p, i) => ({ guesserId: p.id, leaderId: ps[(i - 1 + ps.length) % ps.length].id }));
+                    finalState.currentRoundIndex = 0; finalState.phase = 'setup';
+                } else if (gameData.modeId === 5 || gameData.modeId === 6) {
+                    let size = playerCount === 3 ? 7 : (playerCount >= 4 ? 8 : 6);
                     finalState.gridSize = { rows: size, cols: size };
                     finalState.lines = {}; finalState.boxes = {}; finalState.scores = {};
                     gameData.players.forEach(p => finalState.scores[p.id] = 0);
-                } else if (gameData.modeId === 6) {
-                    finalState.nodes = []; // Force regen
-                    finalState.edges = []; 
-                    finalState.polygons = []; 
-                    finalState.scores = {};
-                    gameData.players.forEach(p => finalState.scores[p.id] = 0);
+                } else if (gameData.modeId === 7) {
+                    if (playerCount < 2) { alert("Servono 2 giocatori!"); return; }
+                    gameData.players.forEach(p => { finalState.boards[p.id] = { mines: [], revealed: [] }; finalState.lives[p.id] = 3; });
                 }
-
                 const updates = { status: 'playing', gameState: finalState };
                 if (isOnline) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', activeLobbyId), updates);
                 else { const n = { ...gameData, ...updates }; setGameData(n); setLocalState(n); }
@@ -1208,36 +1002,19 @@
                 </div>
             );
 
-            if (mode === 'customize') return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
-                    <h2 className="text-2xl font-bold mb-6">Profilo</h2>
-                    <div className="w-full max-w-md space-y-4">
-                        <input value={profile.name} onChange={e => updateProfile({...profile, name: e.target.value})} className="w-full text-2xl font-bold border-b-2 py-2" placeholder="Nome" />
-                        <div className="flex flex-wrap gap-2">{COLORS.map(c => <button key={c} onClick={() => updateProfile({...profile, color: c})} className={`w-8 h-8 rounded-full ${profile.color===c?'ring-2 ring-black':''}`} style={{backgroundColor: c}} />)}</div>
-                        <div className="flex flex-wrap gap-2 bg-gray-50 p-2 rounded">{AVATARS.map(a => <button key={a} onClick={() => updateProfile({...profile, avatar: a})} className={`text-2xl w-10 h-10 rounded ${profile.avatar===a?'bg-white shadow':''}`}>{a}</button>)}</div>
-                        <button onClick={() => setMode('home')} className="w-full bg-black text-white py-3 rounded-xl font-bold btn-press">SALVA</button>
-                    </div>
-                </div>
-            );
-
             if (mode === 'lobby' && gameData) {
                 const activeMode = MODES.find(m => m.id === gameData.modeId);
                 const isHost = gameData.hostId === user?.uid || !isOnline;
                 let effectiveMyId = isOnline ? (user?.uid) : null;
-                
                 if (!isOnline) {
                     if (gameData.modeId === 4) {
-                        if (gameData.status === 'playing' && gameData.gameState.rounds) {
-                             const round = gameData.gameState.rounds[gameData.gameState.currentRoundIndex];
-                             if (round) {
-                                if (gameData.gameState.phase === 'setup') effectiveMyId = round.leaderId;
-                                else if (gameData.gameState.phase === 'guessing') effectiveMyId = round.guesserId;
-                                else effectiveMyId = gameData.hostId;
-                             }
-                        } else effectiveMyId = gameData.hostId;
+                        const round = gameData.gameState.rounds[gameData.gameState.currentRoundIndex];
+                        if (round) effectiveMyId = gameData.gameState.phase === 'setup' ? round.leaderId : round.guesserId;
+                    } else if (gameData.modeId === 7 && gameData.status === 'playing') {
+                        const p1 = gameData.players[0].id; const p2 = gameData.players[1].id;
+                        effectiveMyId = gameData.gameState.phase === 'setup' ? (gameData.gameState.setupDone.includes(p1) ? p2 : p1) : gameData.players[gameData.gameState.turnIndex]?.id;
                     } else effectiveMyId = gameData.players[gameData.gameState.turnIndex]?.id;
                 }
-
                 if (gameData.status === 'playing') return (
                     <div className="min-h-screen pb-10">
                         <div className="bg-white p-3 shadow mb-4 flex justify-between items-center">
@@ -1250,25 +1027,15 @@
                         {gameData.modeId === 4 && <GameGuessColor G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
                         {gameData.modeId === 5 && <GameDotsAndBoxes G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
                         {gameData.modeId === 6 && <GameRandomDots G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
+                        {gameData.modeId === 7 && <GameMines G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
                     </div>
                 );
                 return (
                     <div className="min-h-screen flex flex-col items-center p-4">
                         <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
-                            <div className="bg-indigo-600 p-6 text-white text-center">
-                                <h2 className="text-2xl font-bold">{activeMode.name}</h2>
-                                {isOnline ? <div className="mt-2 text-3xl font-mono font-bold tracking-widest bg-white/20 rounded py-1">{activeLobbyId}</div> : <div className="mt-2">Locale</div>}
-                            </div>
-                            <div className="p-6 space-y-3">
-                                {gameData.players.map(p => (
-                                    <div key={p.id} className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg">
-                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl text-white" style={{backgroundColor: p.color}}>{p.avatar}</div>
-                                        <div className="font-bold">{p.name}</div>
-                                    </div>
-                                ))}
-                                {isHost ? (
-                                    <button onClick={startGame} disabled={gameData.players.length < activeMode.minPlayers} className={`w-full py-3 rounded-xl font-bold text-lg mt-4 ${gameData.players.length < activeMode.minPlayers ? 'bg-gray-200 text-gray-400' : 'bg-green-500 text-white btn-press'}`}>INIZIA</button>
-                                ) : <div className="text-center text-gray-400 mt-4 animate-pulse">In attesa dell'host...</div>}
+                            <div className="bg-indigo-600 p-6 text-white text-center"><h2 className="text-2xl font-bold">{activeMode.name}</h2>{isOnline ? <div className="mt-2 text-3xl font-mono font-bold tracking-widest bg-white/20 rounded py-1">{activeLobbyId}</div> : <div className="mt-2">Locale</div>}</div>
+                            <div className="p-6 space-y-3">{gameData.players.map(p => (<div key={p.id} className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg"><div className="w-10 h-10 rounded-full flex items-center justify-center text-xl text-white" style={{backgroundColor: p.color}}>{p.avatar}</div><div className="font-bold">{p.name}</div></div>))}
+                                {isHost ? <button onClick={startGame} disabled={gameData.players.length < activeMode.minPlayers} className={`w-full py-3 rounded-xl font-bold text-lg mt-4 ${gameData.players.length < activeMode.minPlayers ? 'bg-gray-200 text-gray-400' : 'bg-green-500 text-white btn-press'}`}>INIZIA</button> : <div className="text-center text-gray-400 mt-4 animate-pulse">In attesa dell'host...</div>}
                                 <button onClick={() => {setMode('home'); setActiveLobbyId(null);}} className="w-full text-gray-400 font-bold py-2">Esci</button>
                             </div>
                         </div>
