@@ -47,7 +47,7 @@
         import { 
             Dice5, LogOut, ArrowRight, Skull, RefreshCcw, 
             ArrowUp, ArrowDown, Footprints, Crown, Trophy, 
-            Zap, Bomb, Flag, Flame, Ghost, ShieldAlert, Pointer, Dices, Info, Medal, User, X, ChevronsUp, Users, Shield, AlertCircle, Shuffle, Gem, Biohazard, ArrowLeft
+            Zap, Bomb, Flag, Flame, Ghost, ShieldAlert, Pointer, Dices, Info, Medal, User, X, ChevronsUp, Users, Shield, AlertCircle, Shuffle, Gem, Biohazard, ArrowLeft, Swords
         } from 'lucide-react';
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -111,7 +111,7 @@
         { name: "Will", img: "https://i.pinimg.com/originals/88/80/73/8880736b5695844044e0e38c8063a1ff.gif", dice: { name: "Dado Rainbow", vals: [3, 3, 3, 3, 3, 6], color: "bg-indigo-500", text: "text-indigo-500", desc: "Costante con un tocco di favolosità." } },
         { name: "Carlos Oliveira", img: "https://i.pinimg.com/originals/32/0d/d1/320dd13031f1aba8a2d3d9b9837174f4.gif", dice: { name: "Dado Peloso", vals: [-2, 0, 2, 4, 6, 8], color: "bg-orange-800", text: "text-orange-800", desc: "Selvaggio e imprevedibile." } },
         { name: "Leon", img: "https://i.pinimg.com/736x/db/ef/fc/dbeffc6e915a929f7dbe908390f5af42.jpg", dice: { name: "Dado Carismatico", vals: [2, 2, 2, 5, 5, 5], color: "bg-blue-800", text: "text-blue-800", desc: "Solo numeri stilosi." } },
-        { name: "Finn", img: "https://i.pinimg.com/736x/7e/0b/c9/7e0bc9826a7652264f32a44bc8a40ede.jpg", dice: { name: "Dado Cauto", vals: [1, 1, 1, 1, 1, 1], color: "bg-blue-300", text: "text-blue-400", desc: "Un passo alla volta, eroe." } },
+        { name: "Finn", img: "https://i.pinimg.com/736x/7e/0b/c9/7e0bc9826a7652264f32a44bc8a40ede.jpg", dice: { name: "Dado Cauto", vals: [1, 1, 1, 1, 1, 9], color: "bg-blue-300", text: "text-blue-400", desc: "Un passo alla volta, eroe." } },
         { name: "Jake", img: "https://i.pinimg.com/1200x/cd/77/22/cd7722b2f98ffc75d1128913df6861d7.jpg", dice: { name: "Dado Rischioso", vals: [-3, -3, -3, 7, 8, 8], color: "bg-yellow-400", text: "text-yellow-600", desc: "Allungati troppo e torni indietro." } },
         { name: "Stewie", img: "https://i.pinimg.com/1200x/1e/a2/cc/1ea2cc7a197e3841086f4a1ce18b089c.jpg", dice: { name: "Genio del Male", vals: [1, 3, 5, 6, 7, 7], color: "bg-red-500", text: "text-red-500", desc: "Piani complessi per grandi risultati." } },
         { name: "Peter", img: "https://i.pinimg.com/736x/9e/40/74/9e4074bbe7890cd245b51b9ff5c0e33c.jpg", dice: { name: "Dado Affamato", vals: [1, 2, 2, 2, 7, 8], color: "bg-green-600", text: "text-green-700", desc: "Corri verso il buffet." } },
@@ -152,11 +152,48 @@
                     osc.frequency.linearRampToValueAtTime(50, now + 0.5);
                     gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now + 0.5);
                     osc.start(now); osc.stop(now + 0.5);
+                } else if (type === 'teleport') {
+                    // Sci-fi warp sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now); 
+                    gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                    osc.start(now); osc.stop(now + 0.4);
+                } else if (type === 'punch') {
+                    // Collision sound
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now); 
+                    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
                 }
             } catch (e) { console.error(e); }
         };
 
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // --- ICON MAP FOR DYNAMIC RENDERING ---
+        const IconMap = {
+            Zap: <Zap />,
+            ArrowUp: <ArrowUp />,
+            ArrowDown: <ArrowDown />,
+            ChevronsUp: <ChevronsUp />,
+            Footprints: <Footprints />,
+            Shuffle: <Shuffle />,
+            Bomb: <Bomb />,
+            RefreshCcw: <RefreshCcw />,
+            ShieldAlert: <ShieldAlert />,
+            Skull: <Skull />,
+            ArrowRight: <ArrowRight />
+        };
+
+        const getIcon = (icon) => {
+            if (typeof icon === 'string') return IconMap[icon] || <Info />;
+            return icon;
+        };
 
         // --- MAPPE DI GIOCO ---
         const CLASSIC_MAP = {
@@ -173,13 +210,17 @@
             58: { type: 'RESTART', name: 'Scheletro', icon: <Skull />, desc: "Lo Scheletro ti ha spaventato! Torni all'inizio (START)." },
             5: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
             9: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! Corri avanti di 3 caselle." },
+            11: { type: 'BOOST', val: 4, name: '+4', icon: <Zap />, desc: "Turbo! Vola avanti di 4 caselle." },
             14: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
             23: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Scivolata nel fango! Torni indietro di 2 caselle." },
             27: { type: 'BOOST', val: -1, name: '-1', icon: <ArrowDown />, desc: "Vento contrario! Torni indietro di 1 casella." },
             36: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! Corri avanti di 3 caselle." },
-            38: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "Super Bonus! Avanzi ancora del risultato che hai appena fatto x2!" }, 
+            38: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "Super Bonus! Avanzi ancora del risultato che hai appena fatto x2!" },
+            40: { type: 'TAIL', name: 'In Coda', icon: <Footprints />, desc: "Strategia! Ti teletrasporti subito dietro al giocatore che ti precede." },
+            45: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Volata finale! +3 caselle." },
             50: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Scivolata nel fango! Torni indietro di 2 caselle." },
             54: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
+            56: { type: 'BOOST', val: -3, name: '-3', icon: <ArrowDown />, desc: "No! Sei quasi alla fine ma scivoli indietro di 3!" },
         }
         };
 
@@ -248,17 +289,20 @@
                 cursorClass = "cursor-pointer hover:bg-yellow-100";
             }
 
+            // Resolve dynamic icon string to Component
+            const resolvedIcon = special ? getIcon(special.icon) : null;
+
             return (
                 <div 
                 onClick={() => {
                     if (isPendingTarget) onCellClick();
-                    else if (special) onInfoClick(special);
+                    else if (special) onInfoClick({...special, icon: resolvedIcon});
                 }}
                 className={`relative w-full aspect-square border-2 rounded-xl flex flex-col p-1 shadow-sm transition-all duration-300 ${bgClass} ${borderClass} ${highlightClass} ${cursorClass}`}
                 >
                 <div className="flex justify-between items-start opacity-60">
                     <span className={`font-bold text-xs md:text-sm ${hasGem ? 'text-white' : ''}`}>{num === 0 ? 'START' : num}</span>
-                    {special && <span className="text-xs">{special.icon}</span>}
+                    {special && <span className="text-xs">{resolvedIcon}</span>}
                 </div>
                 
                 {hasGem && (
@@ -332,6 +376,48 @@
                     setErrorMsg(error.message || "Si è verificato un errore sconosciuto.");
                 }
                 setTimeout(() => setErrorMsg(null), 8000); 
+            };
+
+            const generateEliminationSpecials = () => {
+                const max = 34;
+                const pool = [
+                    { type: 'BOOST', val: 3, name: '+3', icon: 'Zap', desc: "Sprint! +3 caselle." },
+                    { type: 'BOOST', val: 3, name: '+3', icon: 'Zap', desc: "Sprint! +3 caselle." },
+                    { type: 'BOOST', val: 4, name: '+4', icon: 'Zap', desc: "Mega Sprint! +4 caselle." },
+                    { type: 'DOUBLE', name: 'Raddoppia', icon: 'ChevronsUp', desc: "X2 Movimento!" },
+                    { type: 'TAIL', name: 'In Coda', icon: 'Footprints', desc: "Ti metti in scia all'avversario!" },
+                    { type: 'TAIL', name: 'In Coda', icon: 'Footprints', desc: "Ti metti in scia all'avversario!" }, 
+                    { type: 'TELEPORT', name: 'Teletrasporto', icon: 'Shuffle', desc: "Scambio posizioni!" },
+                    { type: 'BOOST', val: -2, name: '-2', icon: 'ArrowDown', desc: "Scivolata! Indietro di 2." },
+                    { type: 'BACK_REL', val: 5, name: 'Trappola', icon: 'Bomb', desc: "Trappola! Indietro di 5." }, 
+                    { type: 'BACK_REL', val: 10, name: 'Labirinto', icon: 'ArrowDown', desc: "Labirinto! Indietro di 10." },
+                    { type: 'BACK_REL', val: 15, name: 'Tornado', icon: 'ArrowDown', desc: "Tornado! Indietro di 15." }
+                ];
+
+                const specials = {};
+                const usedPos = new Set([0, max]); // Start and End safe
+
+                pool.forEach(item => {
+                    let pos;
+                    let attempts = 0;
+                    do {
+                        pos = Math.floor(Math.random() * (max - 2)) + 1; // 1 to max-1
+                        attempts++;
+                    } while (usedPos.has(pos) && attempts < 100);
+
+                    if (!usedPos.has(pos)) {
+                        usedPos.add(pos);
+                        // Handle relative back logic
+                        let finalItem = { ...item };
+                        if (item.type === 'BACK_REL') {
+                            finalItem.type = 'BACK';
+                            finalItem.val = Math.max(0, pos - item.val); // Convert to absolute target
+                        }
+                        specials[pos] = finalItem;
+                    }
+                });
+                
+                return specials;
             };
 
             useEffect(() => {
@@ -437,6 +523,10 @@
                             if(!gems.includes(r)) gems.push(r);
                         }
                         extraData.gemLocations = gems;
+                    }
+                    // SHUFFLE MAP FOR ELIMINATION
+                    if (mode === 'elimination') {
+                        extraData.customSpecials = generateEliminationSpecials();
                     }
 
                     const startPos = mode === 'gem_hunt' ? (Math.random() > 0.5 ? 0 : 50) : 0;
@@ -693,7 +783,14 @@
                     const pIndex = currentRoom.currentTurn;
                     const player = currentRoom.players[pIndex];
                     const currentPos = player.position;
+                    // CLASSIC_PUNITIVE uses CLASSIC_MAP
                     const config = currentRoom.gameMode === 'elimination' ? ELIM_MAP : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP : CLASSIC_MAP);
+                    
+                    // DYNAMIC SPECIALS OVERRIDE
+                    let effectiveSpecials = config.specials;
+                    if (currentRoom.gameMode === 'elimination' && currentRoom.customSpecials) {
+                        effectiveSpecials = currentRoom.customSpecials;
+                    }
 
                     const steps = [];
                     const direction = targetPos >= currentPos ? 1 : -1;
@@ -738,7 +835,7 @@
 
                     let finalPos = targetPos;
                     let log = `${player.name} (${player.pawnIdx + 1}°) è alla ${finalPos}.`;
-                    let special = config.specials[finalPos];
+                    let special = effectiveSpecials[finalPos];
                     let extraTurns = 0;
 
                     if (special) {
@@ -840,9 +937,26 @@
                                 tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
                                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
                                 playSound('teleport');
+                            } else {
+                                log += ` Teletrasporto fallito: nessun altro giocatore!`;
+                                playSound('click');
                             }
                         }
                         if (special.type === 'WAIT') extraTurns = special.turns;
+                    }
+
+                    // CLASSIC PUNITIVE COLLISION CHECK
+                    if (currentRoom.gameMode === 'classic_punitive') {
+                         const victims = tempPlayers.filter(p => p.id !== player.id && p.position === finalPos && !p.finished && !p.isDead);
+                         if (victims.length > 0) {
+                             log += ` SCONTRO! ${victims.map(v=>v.name).join(', ')} indietreggiano!`;
+                             victims.forEach(v => {
+                                 const vIndex = tempPlayers.findIndex(tp => tp.id === v.id);
+                                 let vNewPos = Math.max(0, v.position - 3);
+                                 tempPlayers[vIndex] = { ...tempPlayers[vIndex], position: vNewPos };
+                             });
+                             playSound('punch');
+                         }
                     }
 
                     tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos, skipTurns: extraTurns, pendingTarget: null };
@@ -912,7 +1026,9 @@
                             tempPlayers.forEach(p => { if (!p.isDead) { p.position = 0; p.finished = false; p.skipTurns = 0; p.pendingTarget = null; } });
                             updates.players = tempPlayers;
                             updates.round = currentRoom.round + 1;
-                            updates.lastAction = `${loser.name} ELIMINATO! Inizia il Round ${updates.round}!`;
+                            // SHUFFLE MAP FOR NEXT ROUND
+                            updates.customSpecials = generateEliminationSpecials();
+                            updates.lastAction = `${loser.name} ELIMINATO! Mappa rimescolata per il Round ${updates.round}!`;
                             playSound('eliminated');
                             updates.currentTurn = 0;
                         } else if (living.length === 1 && living[0].finished) {
@@ -1160,6 +1276,9 @@
                                 <button onClick={() => createRoom('classic')} disabled={!nickname} className="h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
                                     <Flag size={24}/> CLASSICA
                                 </button>
+                                <button onClick={() => createRoom('classic_punitive')} disabled={!nickname} className="h-24 bg-gradient-to-br from-red-800 to-rose-900 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Swords size={24}/> CLASSICA PUNITIVA
+                                </button>
                                 <button onClick={() => createRoom('elimination')} disabled={!nickname} className="h-24 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
                                     <Skull size={24}/> ELIMINAZIONE
                                 </button>
@@ -1330,8 +1449,11 @@
                                     {currentRoom.gameMode === 'relay' && (
                                         <div className="flex items-center gap-2 text-blue-600 font-black"><Users size={18}/> STAFFETTA</div>
                                     )}
+                                    {currentRoom.gameMode === 'classic_punitive' && (
+                                        <div className="flex items-center gap-2 text-rose-800 font-black"><Swords size={18}/> PUNITIVA</div>
+                                    )}
                                     <div className="text-xs text-slate-400 font-bold">
-                                        {currentRoom.gameMode === 'classic' ? 'RAGGIUNGI IL 60!' : currentRoom.gameMode === 'gem_hunt' ? 'PRENDI 3 GEMME!' : 'TUTTI AL TRAGUARDO!'}
+                                        {currentRoom.gameMode === 'classic' || currentRoom.gameMode === 'classic_punitive' ? 'RAGGIUNGI IL 60!' : currentRoom.gameMode === 'gem_hunt' ? 'PRENDI 3 GEMME!' : 'TUTTI AL TRAGUARDO!'}
                                     </div>
                                 </div>
                             </div>
@@ -1344,7 +1466,13 @@
                                     // Safety: currentPlayer is defined by parent check
                                     const isPendingTarget = currentPlayer.uid === user.uid && currentPlayer.pendingTarget === i;
                                     
-                                    return <BoardCell key={i} num={i} players={playersHere} special={config.specials[i]} 
+                                    // DYNAMIC SPECIALS OVERRIDE FOR RENDERING
+                                    let special = config.specials[i];
+                                    if (currentRoom.gameMode === 'elimination' && currentRoom.customSpecials && currentRoom.customSpecials[i]) {
+                                        special = currentRoom.customSpecials[i];
+                                    }
+
+                                    return <BoardCell key={i} num={i} players={playersHere} special={special} 
                                             isElimination={currentRoom.gameMode === 'elimination'}
                                             isPendingTarget={isPendingTarget}
                                             onCellClick={() => executeMove(user.uid, i)}
