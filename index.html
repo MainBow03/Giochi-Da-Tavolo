@@ -95,26 +95,26 @@
 
         // --- ROSTER DATI ---
         const ROSTER = [
-        { name: "Marinette", img: "https://i.pinimg.com/736x/b8/74/55/b87455575cd069609007a639c9490293.jpg", dice: { name: "Dado Fortunato", vals: [0, 2, 4, 4, 4, 5], color: "bg-pink-500", text: "text-pink-500", desc: "Niente rischi, solo progressi costanti." } },
+        { name: "Marinette", img: "https://i.pinimg.com/736x/b8/74/55/b87455575cd069609007a639c9490293.jpg", dice: { name: "Dado Fortunato", vals: [0, 2, 2, 4, 4, 4], color: "bg-pink-500", text: "text-pink-500", desc: "Niente rischi, solo progressi costanti." } },
         { name: "Adrien", img: "https://i.pinimg.com/1200x/5c/2d/c7/5c2dc740ed2fe906b6afaf1320bf4273.jpg", dice: { name: "Dado Cataclisma", vals: [-2, -1, 0, 3, 6, 9], color: "bg-gray-800", text: "text-gray-800", desc: "Estremi pericolosi: o voli o crolli." } },
         { name: "Re Julien", img: "https://i.pinimg.com/736x/1e/17/19/1e17194ef5b383e4202fbb4875cfbd81.jpg", dice: { name: "Dado da Re", vals: [2, 2, 2, 2, 2, 3], color: "bg-yellow-500", text: "text-yellow-500", desc: "Un re non corre, incede con grazia." } },
         { name: "Gwen", img: "https://i.pinimg.com/1200x/59/d7/15/59d71578cd5f889ae898bbc83dda29dc.jpg", dice: { name: "Dado Solitario", vals: [3, 3, 3, 3, 3, 3], color: "bg-teal-600", text: "text-teal-600", desc: "La coerenza è la chiave della vittoria." } },
-        { name: "Heather", img: "https://i.pinimg.com/736x/81/5b/b6/815bb632721e7d38f26d35801466dd30.jpg", dice: { name: "Dado Villain", vals: [-1, 1, 2, 2, 6, 8], color: "bg-purple-800", text: "text-purple-800", desc: "Pianifica, indietreggia, colpisci duro." } },
-        { name: "Lindsay", img: "https://i.pinimg.com/1200x/ed/96/df/ed96df179eaa7030663473c575067cb4.jpg", dice: { name: "Dado Stupido", vals: [-6, 0, 0, 0, 0, 10], color: "bg-orange-300", text: "text-orange-500", desc: "O disastro totale o miracolo assoluto." } },
+        { name: "Heather", img: "https://i.pinimg.com/736x/81/5b/b6/815bb632721e7d38f26d35801466dd30.jpg", dice: { name: "Dado Villain", vals: [-1, 1, 2, 4, 6, 8], color: "bg-purple-800", text: "text-purple-800", desc: "Pianifica, indietreggia, colpisci duro." } },
+        { name: "Lindsay", img: "https://i.pinimg.com/1200x/ed/96/df/ed96df179eaa7030663473c575067cb4.jpg", dice: { name: "Dado Stupido", vals: [-6, 0, 0, 1, 10, 10], color: "bg-orange-300", text: "text-orange-500", desc: "O disastro totale o miracolo assoluto." } },
         { name: "Yoshi", img: "https://i.pinimg.com/736x/f3/05/7f/f3057f14de68b0afe682ffe93dcc479b.jpg", dice: { name: "Dado Uovo", vals: [2, 2, 2, 3, 3, 3], color: "bg-green-500", text: "text-green-500", desc: "Piccoli saltelli felici verso la meta." } },
-        { name: "Wario", img: "https://i.pinimg.com/736x/2f/ea/be/2feabe47151fd436fbf358c299eb4870.jpg", dice: { name: "Dado WAH?", vals: [0, 0, 0, 2, 6, 6], color: "bg-yellow-600", text: "text-yellow-700", desc: "Pigrizia o avidità, niente vie di mezzo." } },
+        { name: "Wario", img: "https://i.pinimg.com/736x/2f/ea/be/2feabe47151fd436fbf358c299eb4870.jpg", dice: { name: "Dado WAH?", vals: [0, 0, 0, 4, 7, 7], color: "bg-yellow-600", text: "text-yellow-700", desc: "Pigrizia o avidità, niente vie di mezzo." } },
         { name: "Tanjiro", img: "https://i.pinimg.com/736x/e9/6d/20/e96d20e7c159897a05c6baa57fac7f35.jpg", dice: { name: "Dado d'Acqua", vals: [0, 1, 2, 5, 6, 7], color: "bg-cyan-500", text: "text-cyan-600", desc: "Fluido come l'acqua, a volte calmo a volte impetuoso." } },
         { name: "Mr Krab", img: "https://i.pinimg.com/1200x/74/9c/f5/749cf53dd48dbb440fcde8d958c7dbb1.jpg", dice: { name: "Dado Greedy", vals: [-2, -2, -2, 8, 8, 8], color: "bg-red-600", text: "text-red-600", desc: "Rischia tutto per il malloppo grosso." } },
         { name: "Gumball", img: "https://i.pinimg.com/736x/ae/88/e3/ae88e329120b3edc196af1ebbfd8fe07.jpg", dice: { name: "Dado Caotico", vals: [0, 0, 3, 3, 3, 6], color: "bg-blue-400", text: "text-blue-500", desc: "Un disastro controllato." } },
-        { name: "Johnny Bravo", img: "https://i.pinimg.com/736x/4a/62/70/4a6270678f7adcf130672bcd0af41fdf.jpg", dice: { name: "Dado Oh Yeah", vals: [0, 0, 1, 6, 7, 8], color: "bg-black", text: "text-black", desc: "Fatti bello e spera nel meglio." } },
+        { name: "Johnny Bravo", img: "https://i.pinimg.com/736x/4a/62/70/4a6270678f7adcf130672bcd0af41fdf.jpg", dice: { name: "Dado Oh Yeah", vals: [0, 0, 0, 6, 7, 7], color: "bg-black", text: "text-black", desc: "Fatti bello e spera nel meglio." } },
         { name: "Steven", img: "https://i.pinimg.com/736x/2b/fd/20/2bfd202ab782611ea6a0fb0cdcdc37ab.jpg", dice: { name: "Dado Diamantato", vals: [1, 1, 1, 1, 2, 3], color: "bg-pink-300", text: "text-pink-400", desc: "Lento e protettivo, ma sicuro." } },
         { name: "Ariana Grande", img: "https://media.tenor.com/1u94p6qR01gAAAAM/ariana-grande-eternal-sunshine.gif", dice: { name: "Dado YUH", vals: [0, 0, 1, 5, 6, 8], color: "bg-indigo-300", text: "text-indigo-400", desc: "Note alte e passi lunghi (se canti)." } },
         { name: "Will", img: "https://i.pinimg.com/originals/88/80/73/8880736b5695844044e0e38c8063a1ff.gif", dice: { name: "Dado Rainbow", vals: [3, 3, 3, 3, 3, 6], color: "bg-indigo-500", text: "text-indigo-500", desc: "Costante con un tocco di favolosità." } },
-        { name: "Carlos Oliveira", img: "https://i.pinimg.com/originals/32/0d/d1/320dd13031f1aba8a2d3d9b9837174f4.gif", dice: { name: "Dado Peloso", vals: [-2, 0, 2, 4, 6, 8], color: "bg-orange-800", text: "text-orange-800", desc: "Selvaggio e imprevedibile." } },
+        { name: "Carlos Oliveira", img: "https://i.pinimg.com/originals/32/0d/d1/320dd13031f1aba8a2d3d9b9837174f4.gif", dice: { name: "Dado Peloso", vals: [-2, 2, 2, 4, 6, 8], color: "bg-orange-800", text: "text-orange-800", desc: "Selvaggio e imprevedibile." } },
         { name: "Leon", img: "https://i.pinimg.com/736x/db/ef/fc/dbeffc6e915a929f7dbe908390f5af42.jpg", dice: { name: "Dado Carismatico", vals: [2, 2, 2, 5, 5, 5], color: "bg-blue-800", text: "text-blue-800", desc: "Solo numeri stilosi." } },
         { name: "Finn", img: "https://i.pinimg.com/736x/7e/0b/c9/7e0bc9826a7652264f32a44bc8a40ede.jpg", dice: { name: "Dado Cauto", vals: [1, 1, 1, 1, 1, 9], color: "bg-blue-300", text: "text-blue-400", desc: "Un passo alla volta, eroe." } },
         { name: "Jake", img: "https://i.pinimg.com/1200x/cd/77/22/cd7722b2f98ffc75d1128913df6861d7.jpg", dice: { name: "Dado Rischioso", vals: [-3, -3, -3, 7, 8, 8], color: "bg-yellow-400", text: "text-yellow-600", desc: "Allungati troppo e torni indietro." } },
-        { name: "Stewie", img: "https://i.pinimg.com/1200x/1e/a2/cc/1ea2cc7a197e3841086f4a1ce18b089c.jpg", dice: { name: "Genio del Male", vals: [1, 3, 5, 6, 7, 7], color: "bg-red-500", text: "text-red-500", desc: "Piani complessi per grandi risultati." } },
+        { name: "Stewie", img: "https://i.pinimg.com/1200x/1e/a2/cc/1ea2cc7a197e3841086f4a1ce18b089c.jpg", dice: { name: "Genio del Male", vals: [-3, 0, 5, 5, 7, 7], color: "bg-red-500", text: "text-red-500", desc: "Piani complessi per grandi risultati." } },
         { name: "Peter", img: "https://i.pinimg.com/736x/9e/40/74/9e4074bbe7890cd245b51b9ff5c0e33c.jpg", dice: { name: "Dado Affamato", vals: [1, 2, 2, 2, 7, 8], color: "bg-green-600", text: "text-green-700", desc: "Corri verso il buffet." } },
         { name: "Ashley", img: "https://i.pinimg.com/736x/d1/c5/5f/d1c55f57218baecf0c2e160155e80c61.jpg", dice: { name: "Dado Ti Amo", vals: [3, 3, 3, 3, 3, 3], color: "bg-red-400", text: "text-red-400", desc: "Amore costante e ripetitivo." } },
         { name: "Nicole", img: "https://i.pinimg.com/736x/81/24/e4/8124e43da43e1d06dcdbca15f22a0cd9.jpg", dice: { name: "Dado Materno", vals: [0, 0, 2, 5, 5, 5], color: "bg-blue-500", text: "text-blue-600", desc: "Severa ma giusta." } },
@@ -510,7 +510,7 @@
 
             const moveInfectedNPC = async () => {
                 try {
-                    const steps = [2, 3, 4, 6];
+                    const steps = [2, 3, 5, 7];
                     const roll = steps[Math.floor(Math.random() * steps.length)];
                     let npcPos = currentRoom.infectedNPC.position;
                     let newPos = npcPos + roll;
@@ -973,7 +973,14 @@
                         }
                         else if (special.type === 'TELEPORT') {
                             await sleep(800);
-                            const others = tempPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                            // RELAY UPDATE: Exclude teammates to prevent locking issues
+                            const others = tempPlayers.filter(p => 
+                                p.id !== player.id && 
+                                !p.isDead && 
+                                !p.finished &&
+                                (currentRoom.gameMode !== 'relay' || p.teamId !== player.teamId)
+                            );
+
                             if (others.length > 0) {
                                 const targetP = others[Math.floor(Math.random() * others.length)];
                                 log += ` Scambio dimensionale con ${targetP.name}!`;
@@ -982,13 +989,20 @@
                                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
                                 playSound('teleport');
                             } else {
-                                log += ` Teletrasporto fallito: nessun altro giocatore!`;
+                                log += ` Teletrasporto fallito: nessun bersaglio valido!`;
                                 playSound('click');
                             }
                         }
                         else if (special.type === 'SWITCH') {
                             await sleep(800);
-                            const others = tempPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                            // RELAY UPDATE: Exclude teammates to prevent locking issues
+                             const others = tempPlayers.filter(p => 
+                                p.id !== player.id && 
+                                !p.isDead && 
+                                !p.finished &&
+                                (currentRoom.gameMode !== 'relay' || p.teamId !== player.teamId)
+                            );
+
                             if (others.length > 0) {
                                 const targetP = others[Math.floor(Math.random() * others.length)];
                                 const targetIndex = tempPlayers.findIndex(p => p.id === targetP.id);
@@ -1196,12 +1210,20 @@
                         return { ...p, position: newPos };
                     });
                 } else if (option.id === 'teleport') {
-                    const others = updatedPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                    // RELAY UPDATE: Exclude teammates
+                    const others = updatedPlayers.filter(p => 
+                        p.id !== player.id && 
+                        !p.isDead && 
+                        !p.finished &&
+                        (currentRoom.gameMode !== 'relay' || p.teamId !== player.teamId)
+                    );
                     if (others.length > 0) {
                         const target = others[Math.floor(Math.random() * others.length)];
                         updatedPlayers[currentRoom.currentTurn].position = target.position;
                         log += ` Teletrasporto da ${target.name}!`;
                         playSound('teleport');
+                    } else {
+                        log += ` Teletrasporto fallito: nessun bersaglio valido!`;
                     }
                 } else if (option.id === 'reroll') {
                     setDecisionMode(false);
