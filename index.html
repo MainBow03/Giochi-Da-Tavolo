@@ -471,7 +471,7 @@
 
             const moveInfectedNPC = async () => {
                 try {
-                    const steps = [1, 2, 4, 6];
+                    const steps = [2, 3, 4, 6];
                     const roll = steps[Math.floor(Math.random() * steps.length)];
                     let npcPos = currentRoom.infectedNPC.position;
                     let newPos = npcPos + roll;
