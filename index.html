@@ -47,7 +47,8 @@
         import { 
             Dice5, LogOut, ArrowRight, Skull, RefreshCcw, 
             ArrowUp, ArrowDown, Footprints, Crown, Trophy, 
-            Zap, Bomb, Flag, Flame, Ghost, ShieldAlert, Pointer, Dices, Info, Medal, User, X, ChevronsUp, Users, Shield, AlertCircle, Shuffle, Gem, Biohazard, ArrowLeft, Swords
+            Zap, Bomb, Flag, Flame, Ghost, ShieldAlert, Pointer, Dices, Info, Medal, User, X, ChevronsUp, Users, Shield, AlertCircle, Shuffle, Gem, Biohazard, ArrowLeft, Swords,
+            Gavel, ArrowLeftRight, Sparkles, Ban
         } from 'lucide-react';
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -153,7 +154,6 @@
                     gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now + 0.5);
                     osc.start(now); osc.stop(now + 0.5);
                 } else if (type === 'teleport') {
-                    // Sci-fi warp sound
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(200, now);
                     osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
@@ -162,13 +162,19 @@
                     gain.gain.linearRampToValueAtTime(0, now + 0.4);
                     osc.start(now); osc.stop(now + 0.4);
                 } else if (type === 'punch') {
-                    // Collision sound
                     osc.type = 'square';
                     osc.frequency.setValueAtTime(150, now);
                     osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
                     gain.gain.setValueAtTime(0.3, now); 
                     gain.gain.linearRampToValueAtTime(0, now + 0.1);
                     osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'curse') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.5);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
                 }
             } catch (e) { console.error(e); }
         };
@@ -187,7 +193,9 @@
             RefreshCcw: <RefreshCcw />,
             ShieldAlert: <ShieldAlert />,
             Skull: <Skull />,
-            ArrowRight: <ArrowRight />
+            ArrowRight: <ArrowRight />,
+            Gavel: <Gavel />,
+            ArrowLeftRight: <ArrowLeftRight />
         };
 
         const getIcon = (icon) => {
@@ -203,8 +211,10 @@
             16: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
             19: { type: 'WAIT', turns: 2, name: 'Pozzo', icon: <RefreshCcw />, desc: "Sei caduto nel Pozzo! Devi aspettare 2 turni per risalire." }, 
             25: { type: 'TAIL', name: 'In Coda', icon: <Footprints />, desc: "Ti metti in scia! Ti teletrasporti subito dietro al giocatore che ti precede in classifica." },
+            28: { type: 'SWITCH', name: 'Switch', icon: <ArrowLeftRight />, desc: "Caos! Scambi la posizione con un giocatore a caso." },
             31: { type: 'WAIT', turns: 2, name: 'Pozzo 2', icon: <RefreshCcw />, desc: "Un altro pozzo! Aspetta 2 turni." },
             42: { type: 'BACK', val: 30, name: 'Labirinto', icon: <ArrowDown />, desc: "Ti sei perso nel Labirinto! Torni indietro alla casella 30." },
+            44: { type: 'DECISION', name: 'Decisione', icon: <Gavel />, desc: "Scegli il tuo destino! 3 opzioni casuali." },
             48: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
             52: { type: 'WAIT', turns: 2, name: 'Prigione', icon: <ShieldAlert />, desc: "Sei stato arrestato! Rimani in Prigione per 2 turni." },
             58: { type: 'RESTART', name: 'Scheletro', icon: <Skull />, desc: "Lo Scheletro ti ha spaventato! Torni all'inizio (START)." },
@@ -231,9 +241,11 @@
             7: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! +3 caselle." },
             8: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "Super Bonus! Avanzi ancora del risultato che hai appena fatto x2!" }, 
             12: { type: 'BACK', val: 5, name: 'Trappola', icon: <Bomb />, desc: "È una trappola! Torni alla casella 5." },
+            14: { type: 'SWITCH', name: 'Switch', icon: <ArrowLeftRight />, desc: "Caos! Scambi la posizione con un giocatore a caso." },
             15: { type: 'BOOST', val: 4, name: '+4', icon: <Zap />, desc: "Mega Sprint! Corri avanti di 4 caselle." },
             17: { type: 'TAIL', name: 'In Coda', icon: <Footprints />, desc: "Ti metti in scia! Ti teletrasporti dietro al giocatore davanti a te." },
             20: { type: 'BACK', val: 10, name: 'Labirinto', icon: <ArrowDown />, desc: "Labirinto insidioso! Torni alla casella 10." }, 
+            22: { type: 'DECISION', name: 'Decisione', icon: <Gavel />, desc: "Scegli il tuo destino! 3 opzioni casuali." },
             25: { type: 'BACK', val: 18, name: 'Tornado', icon: <ArrowDown />, desc: "Un tornado ti spazza via! Torni alla 18." },
             26: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
             32: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Sei quasi alla fine ma scivoli! Indietro di 2." },
@@ -253,6 +265,15 @@
             }
         };
 
+        const DECISION_POOL = [
+            { id: 'all_1_me_3', name: 'Leadership', desc: "Tutti avanzano di 1, tu di 3.", icon: <Users/> },
+            { id: 'target_back_4', name: 'Sabotaggio', desc: "Scegli chi arretra di 4 caselle.", icon: <ArrowDown/> },
+            { id: 'teleport', name: 'Portale', desc: "Ti teletrasporti da un giocatore a caso.", icon: <Shuffle/> },
+            { id: 'curse', name: 'Maledizione', desc: "Scegli chi userà il dado maledetto (2,1,0,-1).", icon: <Ban/> },
+            { id: 'reroll', name: 'Seconda Chance', desc: "Rilancia subito il dado.", icon: <RefreshCcw/> },
+            { id: 'turbo', name: 'Turbo', desc: "Avanza di 4 caselle.", icon: <Zap/> }
+        ];
+
         const PlayerAvatar = ({ charId, size = "md", border = true }) => {
         const s = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-16 h-16' : 'w-10 h-10';
         // SAFETY GUARD: Use default character if out of bounds
@@ -262,7 +283,7 @@
         );
         };
 
-        const BoardCell = ({ num, players, special, isElimination, isPendingTarget, onCellClick, onInfoClick, gems, infected }) => {
+        const BoardCell = ({ num, players, special, isElimination, isPendingTarget, onCellClick, onInfoClick, gems, infected, isTargetSelection }) => {
             let bgClass = "bg-slate-100";
             let borderClass = "border-slate-300";
             let cursorClass = "cursor-pointer"; 
@@ -276,7 +297,8 @@
                 if (special.type === 'BOOST' && special.val > 0 || special.type === 'JUMP' || special.type === 'DOUBLE') { bgClass = "bg-cyan-100"; borderClass = "border-cyan-300"; }
                 else if ((special.type === 'BOOST' && special.val < 0) || special.type === 'BACK' || special.type === 'RESTART') { bgClass = "bg-red-100"; borderClass = "border-red-300"; }
                 else if (special.type === 'WAIT') { bgClass = "bg-slate-300"; borderClass = "border-slate-500"; }
-                else if (special.type === 'TAIL' || special.type === 'TELEPORT') { bgClass = "bg-purple-200"; borderClass = "border-purple-400"; }
+                else if (special.type === 'TAIL' || special.type === 'TELEPORT' || special.type === 'SWITCH') { bgClass = "bg-purple-200"; borderClass = "border-purple-400"; }
+                else if (special.type === 'DECISION') { bgClass = "bg-amber-100"; borderClass = "border-amber-400"; }
             }
 
             if (hasGem) {
@@ -288,6 +310,10 @@
                 highlightClass = "ring-4 ring-yellow-400 ring-offset-2 animate-pulse z-20 shadow-xl bg-yellow-50 scale-105";
                 cursorClass = "cursor-pointer hover:bg-yellow-100";
             }
+            
+            if (isTargetSelection) {
+                 cursorClass = "cursor-pointer";
+            }
 
             // Resolve dynamic icon string to Component
             const resolvedIcon = special ? getIcon(special.icon) : null;
@@ -296,7 +322,7 @@
                 <div 
                 onClick={() => {
                     if (isPendingTarget) onCellClick();
-                    else if (special) onInfoClick({...special, icon: resolvedIcon});
+                    else if (special && !isTargetSelection) onInfoClick({...special, icon: resolvedIcon});
                 }}
                 className={`relative w-full aspect-square border-2 rounded-xl flex flex-col p-1 shadow-sm transition-all duration-300 ${bgClass} ${borderClass} ${highlightClass} ${cursorClass}`}
                 >
@@ -324,10 +350,16 @@
                     {players.map(p => {
                         const teamColor = p.teamId !== undefined && TEAM_COLORS[p.teamId] ? TEAM_COLORS[p.teamId].border : 'border-white';
                         return (
-                            <div key={p.id} className={`relative transition-all duration-300 ${p.finished || p.isDead ? 'opacity-50 scale-75' : 'hover:scale-125 hover:z-20'}`}>
+                            <div key={p.id} onClick={(e) => {
+                                if (isTargetSelection) {
+                                    e.stopPropagation();
+                                    onCellClick(p.uid); // Pass player UID for targeting
+                                }
+                            }} className={`relative transition-all duration-300 ${p.finished || p.isDead ? 'opacity-50 scale-75' : 'hover:scale-125 hover:z-20'} ${isTargetSelection ? 'cursor-pointer hover:ring-2 hover:ring-red-500 rounded-full' : ''}`}>
                                 <div className={`rounded-full border-2 ${teamColor} p-[1px]`}>
                                     <PlayerAvatar charId={p.characterId} size="sm" border={false} />
                                 </div>
+                                {p.activeCurse && <div className="absolute -top-2 -right-2 bg-purple-900 text-white rounded-full p-0.5 border border-white z-20"><Ban size={10}/></div>}
                                 {p.skipTurns > 0 && <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-[10px] font-bold">{p.skipTurns}</div>}
                                 {p.finished && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full p-0.5"><Flag size={8}/></div>}
                                 {p.isDead && <div className="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center"><Skull className="text-white" size={14}/></div>}
@@ -363,6 +395,11 @@
             const [useSpecialDie, setUseSpecialDie] = useState(false);
             const [directionChoice, setDirectionChoice] = useState(null); // { val: number }
             
+            // NEW STATE FOR DECISION
+            const [decisionMode, setDecisionMode] = useState(false);
+            const [decisionOptions, setDecisionOptions] = useState([]);
+            const [targetSelectionMode, setTargetSelectionMode] = useState(null); // 'curse' or 'back'
+
             const [errorMsg, setErrorMsg] = useState(null);
             const [relayConfig, setRelayConfig] = useState({ teams: 2, size: 2 });
 
@@ -388,6 +425,8 @@
                     { type: 'TAIL', name: 'In Coda', icon: 'Footprints', desc: "Ti metti in scia all'avversario!" },
                     { type: 'TAIL', name: 'In Coda', icon: 'Footprints', desc: "Ti metti in scia all'avversario!" }, 
                     { type: 'TELEPORT', name: 'Teletrasporto', icon: 'Shuffle', desc: "Scambio posizioni!" },
+                    { type: 'SWITCH', name: 'Switch', icon: 'ArrowLeftRight', desc: "Scambi la posizione con un giocatore a caso." },
+                    { type: 'DECISION', name: 'Decisione', icon: 'Gavel', desc: "Scegli il tuo destino!" },
                     { type: 'BOOST', val: -2, name: '-2', icon: 'ArrowDown', desc: "Scivolata! Indietro di 2." },
                     { type: 'BACK_REL', val: 5, name: 'Trappola', icon: 'Bomb', desc: "Trappola! Indietro di 5." }, 
                     { type: 'BACK_REL', val: 10, name: 'Labirinto', icon: 'ArrowDown', desc: "Labirinto! Indietro di 10." },
@@ -551,6 +590,7 @@
                             rank: 0,
                             isBot: false,
                             pendingTarget: null,
+                            activeCurse: false, // New field for curse
                             ...(mode === 'relay' ? { teamId: 0 } : {}),
                             ...(mode === 'gem_hunt' ? { collectedGems: [] } : {}),
                             pawnIdx: 0 
@@ -613,6 +653,7 @@
                         rank: 0,
                         isBot: false,
                         pendingTarget: null,
+                        activeCurse: false,
                         pawnIdx: 0
                     };
                     if (data.gameMode === 'relay') playerObj.teamId = bestTeam;
@@ -678,6 +719,7 @@
                         rank: 0,
                         isBot: true,
                         pendingTarget: null,
+                        activeCurse: false,
                         pawnIdx: 0
                     };
                     if (currentRoom.gameMode === 'relay') newBot.teamId = bestTeam;
@@ -730,7 +772,8 @@
                                     position: 0,
                                     finished: false,
                                     skipTurns: 0,
-                                    pendingTarget: null
+                                    pendingTarget: null,
+                                    activeCurse: false
                                 });
                             }
                         }
@@ -838,6 +881,7 @@
                     let special = effectiveSpecials[finalPos];
                     let extraTurns = 0;
 
+                    // CHECK SPECIAL CELLS
                     if (special) {
                         log += ` ${special.name}!`; 
                         
@@ -941,6 +985,46 @@
                                 log += ` Teletrasporto fallito: nessun altro giocatore!`;
                                 playSound('click');
                             }
+                        }
+                        else if (special.type === 'SWITCH') {
+                            await sleep(800);
+                            const others = tempPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                            if (others.length > 0) {
+                                const targetP = others[Math.floor(Math.random() * others.length)];
+                                const targetIndex = tempPlayers.findIndex(p => p.id === targetP.id);
+                                log += ` Scambio di posto con ${targetP.name}!`;
+                                const myPos = finalPos; // Current player lands here
+                                const theirPos = targetP.position;
+
+                                tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: theirPos };
+                                tempPlayers[targetIndex] = { ...tempPlayers[targetIndex], position: myPos };
+
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
+                                playSound('teleport');
+                                // Update finalPos so the rest of the turn logic knows where I am (though for SWITCH usually no more chain reactions immediately)
+                                finalPos = theirPos; 
+                            } else {
+                                log += ` Switch fallito: sei solo!`;
+                            }
+                        }
+                        else if (special.type === 'DECISION') {
+                            await sleep(500);
+                            // Generate 3 unique options
+                            const shuffled = [...DECISION_POOL].sort(() => 0.5 - Math.random());
+                            const picked = shuffled.slice(0, 3);
+                            
+                            // Only set decision state locally, then return to PAUSE execution
+                            setDecisionOptions(picked);
+                            setDecisionMode(true);
+                            setTargetSelectionMode(null);
+                            
+                            tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos, pendingTarget: null }; // Land here
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { 
+                                players: tempPlayers,
+                                lastAction: `${player.name} deve prendere una decisione!`
+                            });
+                            setIsMoving(false);
+                            return; // STOP EXECUTION HERE, WAIT FOR USER INPUT
                         }
                         if (special.type === 'WAIT') extraTurns = special.turns;
                     }
@@ -1089,6 +1173,93 @@
                  setDirectionChoice(null);
             };
 
+            const handleDecisionEffect = async (option) => {
+                if (!option || !currentRoom) return;
+                const player = currentRoom.players[currentRoom.currentTurn];
+
+                // If targeting is required, enter targeting mode first
+                if (option.id === 'target_back_4' || option.id === 'curse') {
+                    setTargetSelectionMode(option.id);
+                    return; // Wait for target click
+                }
+
+                // Immediate effects
+                let updatedPlayers = [...currentRoom.players];
+                let log = `${player.name} ha scelto: ${option.name}!`;
+
+                if (option.id === 'all_1_me_3') {
+                    // All +1, Me +3 (total)
+                    updatedPlayers = updatedPlayers.map(p => {
+                        if (p.isDead || p.finished) return p;
+                        let move = (p.id === player.id) ? 3 : 1;
+                        let newPos = Math.min(p.position + move, 60); // Simplified bounce check for secondary moves
+                        return { ...p, position: newPos };
+                    });
+                } else if (option.id === 'teleport') {
+                    const others = updatedPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                    if (others.length > 0) {
+                        const target = others[Math.floor(Math.random() * others.length)];
+                        updatedPlayers[currentRoom.currentTurn].position = target.position;
+                        log += ` Teletrasporto da ${target.name}!`;
+                        playSound('teleport');
+                    }
+                } else if (option.id === 'reroll') {
+                    setDecisionMode(false);
+                    setDecisionOptions([]);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                        lastAction: `${player.name} ha scelto di Rilanciare!`
+                    });
+                    // DON'T ADVANCE TURN. Just allow rolling again.
+                    return;
+                } else if (option.id === 'turbo') {
+                    updatedPlayers[currentRoom.currentTurn].position = Math.min(player.position + 4, 60);
+                }
+
+                setDecisionMode(false);
+                setDecisionOptions([]);
+                
+                // End turn logic
+                const nextTurn = getNextTurn(updatedPlayers, currentRoom.currentTurn);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                    players: updatedPlayers,
+                    currentTurn: nextTurn,
+                    lastAction: log
+                });
+            };
+
+            const handleTargetClick = async (targetUid) => {
+                if (!targetSelectionMode || !currentRoom) return;
+                const targetIdx = currentRoom.players.findIndex(p => p.uid === targetUid);
+                if (targetIdx === -1) return;
+
+                let updatedPlayers = [...currentRoom.players];
+                const targetPlayer = updatedPlayers[targetIdx];
+                const currentPlayer = updatedPlayers[currentRoom.currentTurn];
+                let log = `${currentPlayer.name} bersaglia ${targetPlayer.name}!`;
+
+                if (targetSelectionMode === 'target_back_4') {
+                    const newPos = Math.max(0, targetPlayer.position - 4);
+                    updatedPlayers[targetIdx].position = newPos;
+                    log += ` Arretra di 4!`;
+                    playSound('punch');
+                } else if (targetSelectionMode === 'curse') {
+                    updatedPlayers[targetIdx].activeCurse = true;
+                    log += ` Maledizione attivata!`;
+                    playSound('curse');
+                }
+
+                setTargetSelectionMode(null);
+                setDecisionMode(false);
+                setDecisionOptions([]);
+
+                const nextTurn = getNextTurn(updatedPlayers, currentRoom.currentTurn);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                    players: updatedPlayers,
+                    currentTurn: nextTurn,
+                    lastAction: log
+                });
+            };
+
             const handleRoll = async () => {
                 if (isRolling || isMoving || !currentRoom) return;
                 const player = currentRoom.players[currentRoom.currentTurn];
@@ -1125,19 +1296,43 @@
                     const charId = (player.characterId >= 0 && player.characterId < ROSTER.length) ? player.characterId : 0;
                     const specialDice = ROSTER[charId].dice;
                     
+                    // CURSE LOGIC
+                    let vals = [1,2,3,4,5,6];
+                    if (player.activeCurse) {
+                        vals = [2, 2, 1, 1, 0, -1];
+                    } else if (isSpecial) {
+                        vals = specialDice.vals;
+                    }
+
                     for(let i=0; i<10; i++) {
-                        const animVal = isSpecial ? specialDice.vals[Math.floor(Math.random()*6)] : Math.floor(Math.random()*6)+1;
+                        const animVal = vals[Math.floor(Math.random() * vals.length)];
                         setLastRoll(currentRoom.gameMode === 'gem_hunt' ? Math.abs(animVal) : animVal);
                         await sleep(50);
                     }
                     
-                    let val = isSpecial ? specialDice.vals[Math.floor(Math.random() * 6)] : Math.floor(Math.random() * 6) + 1;
+                    let val = vals[Math.floor(Math.random() * vals.length)];
                     
                     // GEM HUNT MODIFIER
                     if (currentRoom.gameMode === 'gem_hunt') val = Math.abs(val);
 
                     setLastRoll(val);
                     await sleep(200);
+
+                    // REMOVE CURSE IF USED
+                    if (player.activeCurse) {
+                        // We need to remove the curse flag locally for the update
+                         const updated = [...currentRoom.players];
+                         updated[currentRoom.currentTurn].activeCurse = false;
+                         // We will update this with the move
+                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: updated });
+                         if (val === 0) {
+                             // Curse 0 means no move, end turn
+                             const next = getNextTurn(currentRoom.players, currentRoom.currentTurn);
+                             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { currentTurn: next, lastAction: `${player.name} maledetto fa 0!` });
+                             setIsRolling(false);
+                             return;
+                         }
+                    }
 
                     if (currentRoom.gameMode === 'gem_hunt' && val !== 0 && !player.isBot) {
                         // User needs to choose direction
@@ -1164,7 +1359,7 @@
                     if (val === 0) newPos = player.position;
                     
                     const updated = [...currentRoom.players];
-                    updated[currentRoom.currentTurn] = { ...player, pendingTarget: newPos };
+                    updated[currentRoom.currentTurn] = { ...player, pendingTarget: newPos, activeCurse: false }; // Ensure activeCurse is false
                     
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
                         players: updated,
@@ -1196,7 +1391,7 @@
                     if (!currentRoom.players || !currentRoom.players[currentRoom.currentTurn]) return;
 
                     const p = currentRoom.players[currentRoom.currentTurn];
-                    if (p.isBot && currentRoom.hostId === user?.uid && !isRolling && !isMoving) {
+                    if (p.isBot && currentRoom.hostId === user?.uid && !isRolling && !isMoving && !decisionMode) {
                         if (p.pendingTarget === null) {
                             if (isPawnLocked(p, currentRoom.players)) {
                                 const next = getNextTurn(currentRoom.players, currentRoom.currentTurn);
@@ -1212,7 +1407,7 @@
                         }
                     }
                 }
-            }, [currentRoom, isRolling, isMoving, user, directionChoice]);
+            }, [currentRoom, isRolling, isMoving, user, directionChoice, decisionMode]);
 
             if (!user) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white">Caricamento...</div>;
 
@@ -1238,6 +1433,38 @@
                                 <h3 className="text-2xl font-black text-indigo-900">{selectedCellInfo.name}</h3>
                                 <p className="text-lg text-slate-600 font-medium leading-relaxed">{selectedCellInfo.desc}</p>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL DECISIONE */}
+                {decisionMode && currentPlayer.uid === user.uid && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+                        <div className="max-w-md w-full flex flex-col items-center gap-4">
+                            {!targetSelectionMode ? (
+                                <>
+                                <div className="text-3xl font-black text-white drop-shadow-lg mb-4 flex items-center gap-2"><Gavel size={32} className="text-yellow-400"/> FATE YOUR CHOICE</div>
+                                <div className="grid grid-cols-1 gap-3 w-full">
+                                    {decisionOptions.map(opt => (
+                                        <button key={opt.id} onClick={() => handleDecisionEffect(opt)} className="bg-white p-4 rounded-xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl group">
+                                            <div className="p-3 bg-indigo-100 rounded-full text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                {opt.icon}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-black text-lg text-slate-900">{opt.name}</div>
+                                                <div className="text-xs text-slate-500 font-medium">{opt.desc}</div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                                </>
+                            ) : (
+                                <div className="bg-white p-6 rounded-2xl shadow-2xl animate-bounce-slow border-4 border-red-500">
+                                    <h2 className="text-2xl font-black text-red-600 text-center mb-2">SELEZIONA BERSAGLIO</h2>
+                                    <p className="text-slate-600 text-center font-bold">Clicca sull'avatar di un giocatore sul tabellone o nella lista!</p>
+                                    <button onClick={() => setTargetSelectionMode(null)} className="mt-4 w-full py-2 bg-slate-200 rounded-lg font-bold">Annulla</button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -1475,10 +1702,11 @@
                                     return <BoardCell key={i} num={i} players={playersHere} special={special} 
                                             isElimination={currentRoom.gameMode === 'elimination'}
                                             isPendingTarget={isPendingTarget}
-                                            onCellClick={() => executeMove(user.uid, i)}
+                                            onCellClick={targetSelectionMode ? handleTargetClick : () => executeMove(user.uid, i)}
                                             onInfoClick={(spec) => setSelectedCellInfo(spec)}
                                             gems={currentRoom.gemLocations}
                                             infected={currentRoom.infectedNPC}
+                                            isTargetSelection={!!targetSelectionMode && currentPlayer.uid === user.uid}
                                         />
                                 })}
                             </div>
@@ -1514,7 +1742,7 @@
                                         )}
 
                                         {/* DICE BUTTON */}
-                                        {!directionChoice && (
+                                        {!directionChoice && !decisionMode && (
                                             <button onClick={handleRoll} 
                                                 disabled={
                                                     isRolling || isMoving || 
@@ -1528,13 +1756,13 @@
                                                         ? 'bg-yellow-500 text-white border-yellow-700 hover:bg-yellow-400' 
                                                         : (useSpecialDie 
                                                                 ? `${currentPlayerChar.dice.color} text-white border-black/20 hover:opacity-90`
-                                                                : 'bg-orange-500 text-white border-orange-700 hover:bg-orange-400')
+                                                                : (currentPlayer.activeCurse ? 'bg-purple-800 text-white border-purple-900' : 'bg-orange-500 text-white border-orange-700 hover:bg-orange-400'))
                                                         )
                                                         : 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed')}`}
                                             >
-                                                {isRolling ? <Dice5 className="animate-spin" size={32}/> : (useSpecialDie ? <Dices size={32}/> : <Dice5 size={32}/>)}
+                                                {isRolling ? <Dice5 className="animate-spin" size={32}/> : (useSpecialDie ? <Dices size={32}/> : (currentPlayer.activeCurse ? <Ban size={32}/> : <Dice5 size={32}/>))}
                                                 <span className="z-10 relative">
-                                                    {isRolling ? "..." : (lastRoll ? (currentPlayer.pendingTarget !== null ? "CLICCA LA CASELLA!" : `TIRO: ${lastRoll}`) : "TIRA IL DADO")}
+                                                    {isRolling ? "..." : (lastRoll ? (currentPlayer.pendingTarget !== null ? "CLICCA LA CASELLA!" : `TIRO: ${lastRoll}`) : (currentPlayer.activeCurse ? "DADO MALEDETTO!" : "TIRA IL DADO"))}
                                                 </span>
                                             </button>
                                         )}
@@ -1562,7 +1790,7 @@
                                         </div>
 
                                         {/* SPECIAL DICE TOGGLE - ENHANCED */}
-                                        {currentPlayer.uid === user.uid && currentPlayer.pendingTarget === null && !directionChoice && (
+                                        {currentPlayer.uid === user.uid && currentPlayer.pendingTarget === null && !directionChoice && !decisionMode && !currentPlayer.activeCurse && (
                                             <div className="w-full bg-white p-3 rounded-xl shadow-lg border border-slate-200 animate-in slide-in-from-bottom-2">
                                                 <div className="flex justify-between items-center mb-2">
                                                         <div className="flex flex-col leading-tight">
@@ -1636,11 +1864,16 @@
                                                    !currentRoom.players.find(tm => tm.teamId===p.teamId && tm.pawnIdx===p.pawnIdx-1)?.finished;
 
                                     return (
-                                        <div key={p.id} className={`relative p-3 rounded-xl border backdrop-blur-sm flex items-center gap-3 transition-all
+                                        <div key={p.id} onClick={() => {
+                                            if (targetSelectionMode) {
+                                                handleTargetClick(p.uid);
+                                            }
+                                        }} className={`relative p-3 rounded-xl border backdrop-blur-sm flex items-center gap-3 transition-all
                                             ${isMe ? 'bg-white/10 border-indigo-400' : 'bg-black/20 border-white/5'}
                                             ${teamColor ? teamColor.border.replace('border', 'border-l-4') : ''}
                                             ${locked ? 'opacity-50 grayscale' : ''}
                                             ${i === 0 ? 'ring-2 ring-yellow-400/50 bg-gradient-to-r from-yellow-500/20 to-transparent' : ''}
+                                            ${targetSelectionMode ? 'cursor-pointer hover:bg-red-500/20 hover:border-red-500' : ''}
                                         `}>
                                             <div className="flex flex-col items-center justify-center w-6 mr-1">
                                                 {i === 0 ? <Medal size={20} className="text-yellow-400 drop-shadow-lg"/> : 
@@ -1652,6 +1885,7 @@
                                             <div className="relative">
                                                 <PlayerAvatar charId={p.characterId} size="sm" border={isMe}/>
                                                 {locked && <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center"><Shield size={12}/></div>}
+                                                {p.activeCurse && <div className="absolute -top-1 -left-1 bg-purple-600 text-white rounded-full p-0.5 shadow-lg border border-white"><Ban size={10}/></div>}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-sm truncate flex items-center gap-2">
