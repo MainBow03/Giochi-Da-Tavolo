@@ -2,1050 +2,1519 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arcade da Tavolo Online</title>
-    
-    <!-- React & ReactDOM -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiverse Run: Arcade</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- FontAwesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+      }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Fredoka', sans-serif;
-            background-color: #f0fdf4;
-            background-image: radial-gradient(#dcfce7 2px, transparent 2px);
-            background-size: 32px 32px;
-            overscroll-behavior: none;
-            touch-action: pan-x pan-y;
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
         }
-        .dice-face {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            padding: 4px;
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite;
         }
-        .dot {
-            background-color: #333;
-            border-radius: 50%;
-            margin: 2px;
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .btn-press:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 0 rgba(0,0,0,0.1);
-        }
-        .glass-container {
-             clip-path: polygon(0% 0%, 100% 0%, 80% 80%, 80% 100%, 20% 100%, 20% 80%);
-        }
-        .cup-shape {
-            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        .gem-glow {
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module" data-presets="react">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Dice5, LogOut, ArrowRight, Skull, RefreshCcw, 
+            ArrowUp, ArrowDown, Footprints, Crown, Trophy, 
+            Zap, Bomb, Flag, Flame, Ghost, ShieldAlert, Pointer, Dices, Info, Medal, User, X, ChevronsUp, Users, Shield, AlertCircle, Shuffle, Gem, Biohazard, ArrowLeft
+        } from 'lucide-react';
 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken,
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            onSnapshot, 
+            updateDoc, 
+            arrayUnion 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- CONFIGURAZIONE FIREBASE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyBSf4LdAEqQVwusujux0TZVay3RhD3aoMY",
-            authDomain: "wordle-amiconi.firebaseapp.com",
-            projectId: "wordle-amiconi",
-            storageBucket: "wordle-amiconi.firebasestorage.app",
-            messagingSenderId: "1013530009591",
-            appId: "1:1013530009591:web:515ae935ead966705a58f2",
-            measurementId: "G-HD8ZPEED82"
+            apiKey: "AIzaSyDTaGJcSOVHg3_2K5SgcrDfANtdn0ewb6s",
+            authDomain: "gioco-oca-pincher.firebaseapp.com",
+            projectId: "gioco-oca-pincher",
+            storageBucket: "gioco-oca-pincher.firebasestorage.app",
+            messagingSenderId: "41567402648",
+            appId: "1:41567402648:web:292e0567e58e814276aeed",
+            measurementId: "G-RCF5K88KPN"
         };
-        
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'boardgames-v1';
-
-        const COLORS = [
-            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
-            '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', 
-            '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', 
-            '#ec4899', '#f43f5e', '#78716c', '#57534e', '#0f172a'
-        ];
         
-        const GAME_COLORS = [
-            '#FF0000', '#0000FF', '#008000', '#FFFF00', '#800080', '#FFA500', '#00FFFF', '#FFC0CB'
+        const appId = 'multiverse_goose_game_v2'; 
+
+        // --- TEAM COLORS ---
+        const TEAM_COLORS = [
+            { name: "Rosso", bg: "bg-red-500", border: "border-red-500", text: "text-red-500", light: "bg-red-100" },
+            { name: "Blu", bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-500", light: "bg-blue-100" },
+            { name: "Verde", bg: "bg-green-500", border: "border-green-500", text: "text-green-500", light: "bg-green-100" },
+            { name: "Giallo", bg: "bg-yellow-500", border: "border-yellow-500", text: "text-yellow-600", light: "bg-yellow-100" }
         ];
 
-        const AVATARS = ['🐶', 'cat', '🐼', '🦊', '🦁', '🐸', '🐙', '🦄', '🤖', '👽', '👻', '🤡'];
-        const MODES = [
-            { id: 1, name: "First to 1-10", maxPlayers: 6, minPlayers: 1, icon: "fa-list-ol", desc: "Tira i dadi e completa la fila!" },
-            { id: 2, name: "Bicchieri d'Uva", maxPlayers: 2, minPlayers: 2, icon: "fa-wine-glass", desc: "Riempi i calici per vincere." },
-            { id: 3, name: "Carte Crescenti", maxPlayers: 4, minPlayers: 1, icon: "fa-layer-group", desc: "Trova la sequenza 1-10." },
-            { id: 4, name: "Indovina il Colore", maxPlayers: 4, minPlayers: 2, icon: "fa-palette", desc: "Il Leader crea la sequenza, tu indovini!" },
-            { id: 5, name: "Punti e Linee", maxPlayers: 4, minPlayers: 2, icon: "fa-border-all", desc: "Chiudi i quadrati nell'arena!" },
-            { id: 6, name: "Punti e Linee Random", maxPlayers: 4, minPlayers: 2, icon: "fa-bezier-curve", desc: "Unisci i punti e chiudi le forme!" },
-            { id: 7, name: "Mina Pericolosa", maxPlayers: 2, minPlayers: 2, icon: "fa-bomb", desc: "Nascondi le mine, non farle esplodere!" }
-        ];
+        // --- ROSTER DATI ---
+        const ROSTER = [
+        { name: "Marinette", img: "https://i.pinimg.com/736x/b8/74/55/b87455575cd069609007a639c9490293.jpg", dice: { name: "Dado Fortunato", vals: [0, 2, 4, 4, 4, 5], color: "bg-pink-500", text: "text-pink-500", desc: "Niente rischi, solo progressi costanti." } },
+        { name: "Adrien", img: "https://i.pinimg.com/1200x/5c/2d/c7/5c2dc740ed2fe906b6afaf1320bf4273.jpg", dice: { name: "Dado Cataclisma", vals: [-2, -1, 0, 3, 6, 9], color: "bg-gray-800", text: "text-gray-800", desc: "Estremi pericolosi: o voli o crolli." } },
+        { name: "Re Julien", img: "https://i.pinimg.com/736x/1e/17/19/1e17194ef5b383e4202fbb4875cfbd81.jpg", dice: { name: "Dado da Re", vals: [2, 2, 2, 2, 2, 3], color: "bg-yellow-500", text: "text-yellow-500", desc: "Un re non corre, incede con grazia." } },
+        { name: "Gwen", img: "https://i.pinimg.com/1200x/59/d7/15/59d71578cd5f889ae898bbc83dda29dc.jpg", dice: { name: "Dado Solitario", vals: [3, 3, 3, 3, 3, 3], color: "bg-teal-600", text: "text-teal-600", desc: "La coerenza è la chiave della vittoria." } },
+        { name: "Heather", img: "https://i.pinimg.com/736x/81/5b/b6/815bb632721e7d38f26d35801466dd30.jpg", dice: { name: "Dado Villain", vals: [-1, 1, 2, 2, 6, 8], color: "bg-purple-800", text: "text-purple-800", desc: "Pianifica, indietreggia, colpisci duro." } },
+        { name: "Lindsay", img: "https://i.pinimg.com/1200x/ed/96/df/ed96df179eaa7030663473c575067cb4.jpg", dice: { name: "Dado Stupido", vals: [-6, 0, 0, 0, 0, 10], color: "bg-orange-300", text: "text-orange-500", desc: "O disastro totale o miracolo assoluto." } },
+        { name: "Yoshi", img: "https://i.pinimg.com/736x/f3/05/7f/f3057f14de68b0afe682ffe93dcc479b.jpg", dice: { name: "Dado Uovo", vals: [2, 2, 2, 3, 3, 3], color: "bg-green-500", text: "text-green-500", desc: "Piccoli saltelli felici verso la meta." } },
+        { name: "Wario", img: "https://i.pinimg.com/736x/2f/ea/be/2feabe47151fd436fbf358c299eb4870.jpg", dice: { name: "Dado WAH?", vals: [0, 0, 0, 2, 6, 6], color: "bg-yellow-600", text: "text-yellow-700", desc: "Pigrizia o avidità, niente vie di mezzo." } },
+        { name: "Tanjiro", img: "https://i.pinimg.com/736x/e9/6d/20/e96d20e7c159897a05c6baa57fac7f35.jpg", dice: { name: "Dado d'Acqua", vals: [0, 1, 2, 5, 6, 7], color: "bg-cyan-500", text: "text-cyan-600", desc: "Fluido come l'acqua, a volte calmo a volte impetuoso." } },
+        { name: "Mr Krab", img: "https://i.pinimg.com/1200x/74/9c/f5/749cf53dd48dbb440fcde8d958c7dbb1.jpg", dice: { name: "Dado Greedy", vals: [-2, -2, -2, 8, 8, 8], color: "bg-red-600", text: "text-red-600", desc: "Rischia tutto per il malloppo grosso." } },
+        { name: "Gumball", img: "https://i.pinimg.com/736x/ae/88/e3/ae88e329120b3edc196af1ebbfd8fe07.jpg", dice: { name: "Dado Caotico", vals: [0, 0, 3, 3, 3, 6], color: "bg-blue-400", text: "text-blue-500", desc: "Un disastro controllato." } },
+        { name: "Johnny Bravo", img: "https://i.pinimg.com/736x/4a/62/70/4a6270678f7adcf130672bcd0af41fdf.jpg", dice: { name: "Dado Oh Yeah", vals: [0, 0, 1, 6, 7, 8], color: "bg-black", text: "text-black", desc: "Fatti bello e spera nel meglio." } },
+        { name: "Steven", img: "https://i.pinimg.com/736x/2b/fd/20/2bfd202ab782611ea6a0fb0cdcdc37ab.jpg", dice: { name: "Dado Diamantato", vals: [1, 1, 1, 1, 2, 3], color: "bg-pink-300", text: "text-pink-400", desc: "Lento e protettivo, ma sicuro." } },
+        { name: "Ariana Grande", img: "https://media.tenor.com/1u94p6qR01gAAAAM/ariana-grande-eternal-sunshine.gif", dice: { name: "Dado YUH", vals: [0, 0, 1, 5, 6, 8], color: "bg-indigo-300", text: "text-indigo-400", desc: "Note alte e passi lunghi (se canti)." } },
+        { name: "Will", img: "https://i.pinimg.com/originals/88/80/73/8880736b5695844044e0e38c8063a1ff.gif", dice: { name: "Dado Rainbow", vals: [3, 3, 3, 3, 3, 6], color: "bg-indigo-500", text: "text-indigo-500", desc: "Costante con un tocco di favolosità." } },
+        { name: "Carlos Oliveira", img: "https://i.pinimg.com/originals/32/0d/d1/320dd13031f1aba8a2d3d9b9837174f4.gif", dice: { name: "Dado Peloso", vals: [-2, 0, 2, 4, 6, 8], color: "bg-orange-800", text: "text-orange-800", desc: "Selvaggio e imprevedibile." } },
+        { name: "Leon", img: "https://i.pinimg.com/736x/db/ef/fc/dbeffc6e915a929f7dbe908390f5af42.jpg", dice: { name: "Dado Carismatico", vals: [2, 2, 2, 5, 5, 5], color: "bg-blue-800", text: "text-blue-800", desc: "Solo numeri stilosi." } },
+        { name: "Finn", img: "https://i.pinimg.com/736x/7e/0b/c9/7e0bc9826a7652264f32a44bc8a40ede.jpg", dice: { name: "Dado Cauto", vals: [1, 1, 1, 1, 1, 1], color: "bg-blue-300", text: "text-blue-400", desc: "Un passo alla volta, eroe." } },
+        { name: "Jake", img: "https://i.pinimg.com/1200x/cd/77/22/cd7722b2f98ffc75d1128913df6861d7.jpg", dice: { name: "Dado Rischioso", vals: [-3, -3, -3, 7, 8, 8], color: "bg-yellow-400", text: "text-yellow-600", desc: "Allungati troppo e torni indietro." } },
+        { name: "Stewie", img: "https://i.pinimg.com/1200x/1e/a2/cc/1ea2cc7a197e3841086f4a1ce18b089c.jpg", dice: { name: "Genio del Male", vals: [1, 3, 5, 6, 7, 7], color: "bg-red-500", text: "text-red-500", desc: "Piani complessi per grandi risultati." } },
+        { name: "Peter", img: "https://i.pinimg.com/736x/9e/40/74/9e4074bbe7890cd245b51b9ff5c0e33c.jpg", dice: { name: "Dado Affamato", vals: [1, 2, 2, 2, 7, 8], color: "bg-green-600", text: "text-green-700", desc: "Corri verso il buffet." } },
+        { name: "Ashley", img: "https://i.pinimg.com/736x/d1/c5/5f/d1c55f57218baecf0c2e160155e80c61.jpg", dice: { name: "Dado Ti Amo", vals: [3, 3, 3, 3, 3, 3], color: "bg-red-400", text: "text-red-400", desc: "Amore costante e ripetitivo." } },
+        { name: "Nicole", img: "https://i.pinimg.com/736x/81/24/e4/8124e43da43e1d06dcdbca15f22a0cd9.jpg", dice: { name: "Dado Materno", vals: [0, 0, 2, 5, 5, 5], color: "bg-blue-500", text: "text-blue-600", desc: "Severa ma giusta." } },
+        { name: "Lapis", img: "https://i.pinimg.com/1200x/09/fb/12/09fb12467957da96913fc8f75e6f6356.jpg", dice: { name: "Dado Tsunami", vals: [-4, -2, 0, 6, 8, 10], color: "bg-blue-600", text: "text-blue-600", desc: "La forza dell'oceano: devastante o ritirata." } }
+        ].map((c, i) => ({ ...c, id: i }));
 
-        const generateCode = () => Math.random().toString(36).substring(2, 7).toUpperCase();
-        const rollDie = () => Math.floor(Math.random() * 6) + 1;
-
-        const Die = ({ value, shaking }) => {
-            const dots = {
-                1: [[2,2]], 2: [[1,1], [3,3]], 3: [[1,1], [2,2], [3,3]],
-                4: [[1,1], [1,3], [3,1], [3,3]], 5: [[1,1], [1,3], [2,2], [3,1], [3,3]],
-                6: [[1,1], [1,2], [1,3], [3,1], [3,2], [3,3]]
-            };
-            return (
-                <div className={`w-12 h-12 bg-white rounded-xl border-2 border-gray-300 shadow-sm dice-face ${shaking ? 'animate-spin' : ''}`}>
-                    {dots[value]?.map((pos, i) => <div key={i} className="dot" style={{ gridColumn: pos[1], gridRow: pos[0] }}></div>)}
-                </div>
-            );
+        // --- SOUND ENGINE ---
+        const playSound = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+                
+                if (type === 'click') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'step') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'gem') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, now);
+                    osc.frequency.linearRampToValueAtTime(2000, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'zombie') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+                    gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                }
+            } catch (e) { console.error(e); }
         };
 
-        const GameFirstTo10 = ({ G, myPlayerId, updateGame, players }) => {
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            const finished = (G.finishedPlayers || []).find(p => p.id === myPlayerId);
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            const handleRoll = () => {
-                const d1 = rollDie();
-                const d2 = rollDie();
-                updateGame({
-                    dice: [d1, d2],
-                    rolled: true,
-                    usedDice: [],
-                    message: `${currentPlayer.name} ha tirato ${d1} e ${d2}!`
-                });
-            };
-
-            const handleNumberClick = (num) => {
-                if (!isMyTurn || !G.rolled || finished) return;
-                const d1 = G.dice[0];
-                const d2 = G.dice[1];
-                const sum = d1 + d2;
-                const myBoard = G.boards[myPlayerId] || [];
-                if (myBoard.includes(num)) return;
-                let newUsedDice = [...(G.usedDice || [])];
-                let isValidMove = false;
-                if (num === sum && newUsedDice.length === 0) {
-                    newUsedDice = [0, 1];
-                    isValidMove = true;
-                } else if (num === d1 && !newUsedDice.includes(0)) {
-                    newUsedDice.push(0);
-                    isValidMove = true;
-                } else if (num === d2 && !newUsedDice.includes(1)) {
-                    newUsedDice.push(1);
-                    isValidMove = true;
-                }
-                if (isValidMove) {
-                    const newBoard = [...myBoard, num];
-                    let msg = G.message;
-                    let finishedList = G.finishedPlayers || [];
-                    if (newBoard.length === 10) {
-                        finishedList = [...finishedList, {id: myPlayerId, time: Date.now()}];
-                        msg = `${currentPlayer.name} ha completato il tabellone!`;
-                    }
-                    updateGame({
-                        boards: { ...G.boards, [myPlayerId]: newBoard },
-                        usedDice: newUsedDice,
-                        finishedPlayers: finishedList,
-                        message: msg
-                    });
-                }
-            };
-
-            const passTurn = () => {
-                 updateGame({
-                    usedDice: [],
-                    rolled: false,
-                    turnIndex: (G.turnIndex + 1) % players.length,
-                    message: `Turno passato a ${players[(G.turnIndex + 1) % players.length].name}.`
-                 });
-            };
-
-            return (
-                <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2">
-                    <div className="bg-white rounded-2xl p-4 shadow-lg w-full mb-6 flex flex-col items-center sticky top-16 z-10 border border-gray-100">
-                        <h2 className="text-xl font-bold mb-2 text-gray-700">Turno di: <span style={{color: currentPlayer?.color}}>{currentPlayer?.name}</span></h2>
-                        <div className="flex gap-4 mb-4">
-                            {G.dice.map((d, i) => (
-                                <div key={i} className={`transform transition-all ${G.usedDice?.includes(i) ? 'opacity-30 scale-90 grayscale' : 'opacity-100'}`}>
-                                    <Die value={d || 1} shaking={!G.rolled && isMyTurn} />
-                                </div>
-                            ))}
-                        </div>
-                        {isMyTurn && !finished ? (
-                            <div className="flex gap-2">
-                                {!G.rolled ? (
-                                    <button onClick={handleRoll} className="bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-md btn-press text-lg">LANCIA DADI</button>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <button onClick={passTurn} className="bg-gray-800 text-white px-8 py-2 rounded-full font-bold shadow-md btn-press">PASSA TURNO <i className="fa-solid fa-forward ml-2"></i></button>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-gray-500 italic">{finished ? "Hai completato il tabellone!" : "In attesa..."}</div>
-                        )}
-                        <p className="mt-2 text-sm text-gray-500">{G.message}</p>
-                    </div>
-                    <div className="w-full grid gap-4">
-                        {players.map((p, idx) => {
-                            const isMe = p.id === myPlayerId;
-                            const pBoard = G.boards[p.id] || [];
-                            const isFinished = (G.finishedPlayers || []).find(fp => fp.id === p.id);
-                            return (
-                                <div key={p.id} className={`bg-white rounded-xl p-3 shadow-md border-l-8 ${G.turnIndex === idx ? 'ring-2 ring-yellow-400' : ''}`} style={{ borderLeftColor: p.color }}>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-2xl">{p.avatar || '👤'}</span>
-                                            <span className="font-bold text-gray-800">{p.name}</span>
-                                            {isFinished && <span className="text-xs bg-yellow-300 px-2 py-1 rounded-full text-yellow-800">🏆 FINITO</span>}
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between gap-1 overflow-x-auto pb-2">
-                                        {[1,2,3,4,5,6,7,8,9,10].map(num => {
-                                            const marked = pBoard.includes(num);
-                                            return (
-                                                <button 
-                                                    key={num}
-                                                    onClick={() => isMe ? handleNumberClick(num) : null}
-                                                    disabled={!isMe || marked}
-                                                    className={`w-8 h-10 sm:w-10 sm:h-14 rounded-md flex items-center justify-center text-lg font-bold transition-all ${marked ? `bg-gray-800 text-white opacity-50 cursor-not-allowed` : isMe && isMyTurn && G.rolled && !finished ? 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 cursor-pointer shadow-sm active:scale-95' : 'bg-gray-100 text-gray-300 cursor-default'}`}
-                                                    style={marked ? {backgroundColor: p.color, color: 'white'} : {}}
-                                                >{marked ? 'X' : num}</button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
+        // --- MAPPE DI GIOCO ---
+        const CLASSIC_MAP = {
+        max: 60,
+        specials: {
+            6: { type: 'JUMP', val: 12, name: 'Ponte', icon: <ArrowRight />, desc: "Attraversa il ponte! Vai direttamente alla casella 12." },
+            16: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
+            19: { type: 'WAIT', turns: 2, name: 'Pozzo', icon: <RefreshCcw />, desc: "Sei caduto nel Pozzo! Devi aspettare 2 turni per risalire." }, 
+            25: { type: 'TAIL', name: 'In Coda', icon: <Footprints />, desc: "Ti metti in scia! Ti teletrasporti subito dietro al giocatore che ti precede in classifica." },
+            31: { type: 'WAIT', turns: 2, name: 'Pozzo 2', icon: <RefreshCcw />, desc: "Un altro pozzo! Aspetta 2 turni." },
+            42: { type: 'BACK', val: 30, name: 'Labirinto', icon: <ArrowDown />, desc: "Ti sei perso nel Labirinto! Torni indietro alla casella 30." },
+            48: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
+            52: { type: 'WAIT', turns: 2, name: 'Prigione', icon: <ShieldAlert />, desc: "Sei stato arrestato! Rimani in Prigione per 2 turni." },
+            58: { type: 'RESTART', name: 'Scheletro', icon: <Skull />, desc: "Lo Scheletro ti ha spaventato! Torni all'inizio (START)." },
+            5: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
+            9: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! Corri avanti di 3 caselle." },
+            14: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
+            23: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Scivolata nel fango! Torni indietro di 2 caselle." },
+            27: { type: 'BOOST', val: -1, name: '-1', icon: <ArrowDown />, desc: "Vento contrario! Torni indietro di 1 casella." },
+            36: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! Corri avanti di 3 caselle." },
+            38: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "Super Bonus! Avanzi ancora del risultato che hai appena fatto x2!" }, 
+            50: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Scivolata nel fango! Torni indietro di 2 caselle." },
+            54: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Un piccolo aiuto: avanza di 2 caselle." },
+        }
         };
 
-        const GameGrapes = ({ G, myPlayerId, updateGame, players }) => {
-            const [localRolling, setLocalRolling] = React.useState(false);
-            const [localDieVal, setLocalDieVal] = React.useState(1);
-            if (players.length < 2) return <div className="p-4 text-center">In attesa del secondo giocatore...</div>;
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            if (!G.glasses) return <div>Inizializzazione...</div>;
+        const ELIM_MAP = {
+        max: 34,
+        specials: {
+            3: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint iniziale! +3 caselle." },
+            7: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Sprint! +3 caselle." },
+            8: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "Super Bonus! Avanzi ancora del risultato che hai appena fatto x2!" }, 
+            12: { type: 'BACK', val: 5, name: 'Trappola', icon: <Bomb />, desc: "È una trappola! Torni alla casella 5." },
+            15: { type: 'BOOST', val: 4, name: '+4', icon: <Zap />, desc: "Mega Sprint! Corri avanti di 4 caselle." },
+            17: { type: 'TAIL', name: 'In Coda', icon: <Footprints />, desc: "Ti metti in scia! Ti teletrasporti dietro al giocatore davanti a te." },
+            20: { type: 'BACK', val: 10, name: 'Labirinto', icon: <ArrowDown />, desc: "Labirinto insidioso! Torni alla casella 10." }, 
+            25: { type: 'BACK', val: 18, name: 'Tornado', icon: <ArrowDown />, desc: "Un tornado ti spazza via! Torni alla 18." },
+            26: { type: 'TELEPORT', name: 'Teletrasporto', icon: <Shuffle />, desc: "Scambio dimensionale! Vai nella casella di un giocatore a caso." },
+            32: { type: 'BOOST', val: -2, name: '-2', icon: <ArrowDown />, desc: "Sei quasi alla fine ma scivoli! Indietro di 2." },
+        }
+        };
 
-            const animateAndRoll = () => {
-                if (localRolling) return;
-                setLocalRolling(true);
-                setTimeout(() => {
-                    const roll = Math.floor(Math.random() * 6) + 1;
-                    setLocalDieVal(roll);
-                    setLocalRolling(false);
-                    updateGame({ currentRoll: roll, remainingMoves: roll, rolled: true, message: `${currentPlayer.name} ha tirato un ${roll}. Distribuisci!` });
-                }, 1000);
-            };
+        const GEM_MAP = {
+            max: 50,
+            specials: {
+                5: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Avanza di 2" },
+                12: { type: 'BOOST', val: 1, name: '+1', icon: <ArrowUp />, desc: "Avanza di 1" },
+                18: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Avanza di 3" },
+                22: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "X2 Movimento" },
+                30: { type: 'BOOST', val: 2, name: '+2', icon: <ArrowUp />, desc: "Avanza di 2" },
+                38: { type: 'BOOST', val: 3, name: '+3', icon: <Zap />, desc: "Avanza di 3" },
+                45: { type: 'DOUBLE', name: 'Raddoppia', icon: <ChevronsUp />, desc: "X2 Movimento" }
+            }
+        };
 
-            const fillGlass = (glassIdx) => {
-                if (!isMyTurn || !G.rolled || G.remainingMoves <= 0 || localRolling) return;
-                const glass = G.glasses[glassIdx];
-                const isCenter = glassIdx === 1;
-                const myGlassIdx = players[0].id === currentPlayer.id ? 0 : 2;
-                const myGlassFull = !G.glasses[myGlassIdx].dots.includes(null);
-                if (!myGlassFull && glassIdx !== myGlassIdx) { alert("Devi riempire prima il tuo calice!"); return; }
-                if (glass.ownerId && glass.ownerId !== currentPlayer.id) return;
-                if (!glass.dots.includes(null)) return;
-                const newGlasses = [...G.glasses];
-                const newDots = [...glass.dots];
-                let fillIndex = -1;
-                if (!isCenter) fillIndex = newDots.indexOf(null);
-                else {
-                    if (players[0].id === currentPlayer.id) fillIndex = newDots.indexOf(null); 
-                    else fillIndex = newDots.lastIndexOf(null); 
-                }
-                if (fillIndex === -1) return;
-                newDots[fillIndex] = currentPlayer.id; 
-                newGlasses[glassIdx] = { ...glass, dots: newDots };
-                const newRemaining = G.remainingMoves - 1;
-                let nextTurn = G.turnIndex;
-                let resetRolled = G.rolled;
-                let resetMsg = G.message;
-                if (newRemaining === 0) {
-                    nextTurn = (G.turnIndex + 1) % 2;
-                    resetRolled = false;
-                    resetMsg = `Turno di ${players[nextTurn].name}`;
-                    setLocalDieVal(1);
-                }
-                const allFull = newGlasses.every(g => !g.dots.includes(null));
-                let winnerId = null;
-                if (allFull) {
-                    let p1Count = 0; let p2Count = 0;
-                    const p1Id = players[0].id; const p2Id = players[1].id;
-                    newGlasses.forEach(g => { g.dots.forEach(d => { if (d === p1Id) p1Count++; if (d === p2Id) p2Count++; }); });
-                    winnerId = p1Count > p2Count ? p1Id : (p2Count > p1Count ? p2Id : 'draw');
-                    resetMsg = winnerId === 'draw' ? "Pareggio!" : `Vince ${players.find(p=>p.id===winnerId)?.name}!`;
-                }
-                updateGame({ glasses: newGlasses, remainingMoves: newRemaining, turnIndex: nextTurn, rolled: resetRolled, message: resetMsg, winner: winnerId });
-            };
+        const PlayerAvatar = ({ charId, size = "md", border = true }) => {
+        const s = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-16 h-16' : 'w-10 h-10';
+        if (charId < 0 || charId >= ROSTER.length) return null;
+        return (
+            <img src={ROSTER[charId].img} className={`${s} rounded-full object-cover ${border ? 'border-2 border-white shadow-sm' : ''}`} alt="Avatar" />
+        );
+        };
 
-            const renderGlass = (glass, idx) => {
-                const rows = [ glass.dots.slice(0, 5), glass.dots.slice(5, 9), glass.dots.slice(9, 11), glass.dots.slice(11, 13) ];
-                return (
-                    <div onClick={() => fillGlass(idx)} className={`flex flex-col items-center cursor-pointer transition-transform hover:scale-105 ${isMyTurn && G.rolled && G.remainingMoves > 0 ? 'ring-4 ring-green-400 rounded-lg p-1' : ''}`}>
-                        <div className="glass-container w-32 h-44 bg-blue-50 border-4 border-blue-200 relative flex flex-col items-center pt-2 gap-1 shadow-xl">
-                            {rows.map((row, rIdx) => (
-                                <div key={rIdx} className="flex gap-1 justify-center">
-                                    {row.map((owner, dIdx) => {
-                                        const isFilled = owner !== null;
-                                        let bg = 'bg-gray-100';
-                                        if (isFilled) {
-                                            const p = players.find(pl => pl.id === owner);
-                                            bg = p ? p.color : '#333';
-                                        }
-                                        return <div key={dIdx} className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: isFilled ? bg : '#f3f4f6' }}></div>;
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="h-12 w-3 bg-blue-200"></div>
-                        <div className="h-3 w-16 bg-blue-200 rounded-full"></div>
-                        <span className="mt-1 font-bold bg-white px-2 rounded text-xs border">{glass.ownerId ? players.find(p=>p.id===glass.ownerId)?.name : 'Centro'}</span>
-                    </div>
-                );
-            };
+        const BoardCell = ({ num, players, special, isElimination, isPendingTarget, onCellClick, onInfoClick, gems, infected }) => {
+            let bgClass = "bg-slate-100";
+            let borderClass = "border-slate-300";
+            let cursorClass = "cursor-pointer"; 
+            let highlightClass = "";
+            
+            const hasGem = gems && gems.includes(num);
+
+            if (num === 0) { bgClass = "bg-green-200"; borderClass = "border-green-400"; }
+            else if (num === (isElimination ? 34 : (special && !special.max ? 60 : 50))) { bgClass = "bg-yellow-200"; borderClass = "border-yellow-400"; }
+            else if (special) {
+                if (special.type === 'BOOST' && special.val > 0 || special.type === 'JUMP' || special.type === 'DOUBLE') { bgClass = "bg-cyan-100"; borderClass = "border-cyan-300"; }
+                else if ((special.type === 'BOOST' && special.val < 0) || special.type === 'BACK' || special.type === 'RESTART') { bgClass = "bg-red-100"; borderClass = "border-red-300"; }
+                else if (special.type === 'WAIT') { bgClass = "bg-slate-300"; borderClass = "border-slate-500"; }
+                else if (special.type === 'TAIL' || special.type === 'TELEPORT') { bgClass = "bg-purple-200"; borderClass = "border-purple-400"; }
+            }
+
+            if (hasGem) {
+                bgClass = "bg-indigo-900";
+                borderClass = "border-yellow-400";
+            }
+
+            if (isPendingTarget) {
+                highlightClass = "ring-4 ring-yellow-400 ring-offset-2 animate-pulse z-20 shadow-xl bg-yellow-50 scale-105";
+                cursorClass = "cursor-pointer hover:bg-yellow-100";
+            }
 
             return (
-                <div className="flex flex-col items-center w-full">
-                    {G.winner ? (
-                        <div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">🎉 {players.find(p=>p.id===G.winner)?.name || "Pareggio"} Ha Vinto! 🎉</div>
-                    ) : (
-                        <div className="flex flex-col items-center w-full mb-4">
-                            <h2 className="text-xl font-bold bg-white px-4 py-2 rounded-full shadow mb-4">Turno di {currentPlayer.name}</h2>
-                            <div className="flex flex-col items-center gap-3 bg-white p-4 rounded-xl shadow-lg">
-                                <Die value={G.rolled ? G.currentRoll : localDieVal} shaking={localRolling} />
-                                {isMyTurn && !G.rolled && !localRolling && <button onClick={animateAndRoll} className="bg-purple-600 text-white px-6 py-2 rounded-full font-bold shadow-md btn-press">LANCIA IL DADO</button>}
-                                {localRolling && <div className="text-purple-500 font-bold">Rotolando...</div>}
-                                {G.rolled && <div className="text-2xl font-bold text-purple-600 animate-pulse">Da mettere: {G.remainingMoves}</div>}
-                            </div>
-                            <p className="mt-2 text-gray-500 font-bold">{G.message}</p>
+                <div 
+                onClick={() => {
+                    if (isPendingTarget) onCellClick();
+                    else if (special) onInfoClick(special);
+                }}
+                className={`relative w-full aspect-square border-2 rounded-xl flex flex-col p-1 shadow-sm transition-all duration-300 ${bgClass} ${borderClass} ${highlightClass} ${cursorClass}`}
+                >
+                <div className="flex justify-between items-start opacity-60">
+                    <span className={`font-bold text-xs md:text-sm ${hasGem ? 'text-white' : ''}`}>{num === 0 ? 'START' : num}</span>
+                    {special && <span className="text-xs">{special.icon}</span>}
+                </div>
+                
+                {hasGem && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <Gem className="text-yellow-400 gem-glow animate-bounce" size={24} fill="gold"/>
+                    </div>
+                )}
+
+                <div className="flex-1 flex flex-wrap content-center justify-center gap-1 z-10">
+                    {/* INFECTED NPC */}
+                    {infected && infected.position === num && (
+                        <div className="relative z-30 animate-pulse">
+                             <div className="rounded-full border-2 border-green-900 bg-green-500 p-1 shadow-lg">
+                                <Biohazard size={20} className="text-green-900"/>
+                             </div>
                         </div>
                     )}
-                    <div className="flex flex-wrap justify-center items-end gap-2 sm:gap-6 mt-2">
-                        {renderGlass(G.glasses[0], 0)} {renderGlass(G.glasses[1], 1)} {renderGlass(G.glasses[2], 2)}
-                    </div>
-                </div>
-            )
-        };
-
-        const GameCards = ({ G, myPlayerId, updateGame, players }) => {
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            const handleCardClick = (pId, cIdx) => {
-                if (!isMyTurn || pId !== myPlayerId || G.waitingReset) return;
-                const pData = G.playerData[myPlayerId];
-                if (pData.visible[cIdx]) return;
-                const cardValue = pData.cards[cIdx];
-                const target = pData.target;
-                let newVisible = [...pData.visible];
-                let newTarget = target;
-                let waitReset = false;
-                let msg = "";
-                newVisible[cIdx] = true;
-                if (cardValue === target) {
-                    newTarget++;
-                    msg = `Bravo! Ora cerca il ${newTarget}.`;
-                    if (newTarget > 10) {
-                         const newFinished = [...(G.finishedPlayers || []), {id: myPlayerId, time: Date.now()}];
-                         msg = `${currentPlayer.name} ha vinto!`;
-                         updateGame({ playerData: { ...G.playerData, [myPlayerId]: { ...pData, visible: newVisible, target: newTarget } }, finishedPlayers: newFinished, message: msg });
-                        return;
-                    }
-                } else {
-                    msg = `No! Era un ${cardValue}. RESET!`;
-                    waitReset = true;
-                }
-                updateGame({ playerData: { ...G.playerData, [myPlayerId]: { ...pData, visible: newVisible, target: newTarget } }, waitingReset: waitReset, message: msg });
-                if (waitReset) {
-                    setTimeout(() => {
-                        const resetVisible = Array(10).fill(false);
-                        const resetTarget = 1;
-                        updateGame({ playerData: { ...G.playerData, [myPlayerId]: { ...pData, visible: resetVisible, target: resetTarget } }, turnIndex: (G.turnIndex + 1) % players.length, waitingReset: false, message: `Tocca a ${players[(G.turnIndex + 1) % players.length].name}` });
-                    }, 2000);
-                }
-            };
-            return (
-                <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
-                     <div className="bg-white p-3 rounded-xl shadow text-center sticky top-0 z-20">
-                        <h2 className="text-xl font-bold text-indigo-700">Turno: {currentPlayer.name}</h2>
-                        <p className="text-gray-500 font-bold">{G.message}</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {players.map((p, pIdx) => {
-                            const pData = G.playerData[p.id];
-                            return (
-                                <div key={p.id} className={`p-4 rounded-xl border-4 relative ${G.turnIndex === pIdx ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-100'}`}>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-2"><span className="text-2xl">{p.avatar}</span><span className="font-bold" style={{color: p.color}}>{p.name}</span></div>
-                                        <div className="text-sm font-bold text-gray-400">Target: {pData?.target}</div>
-                                    </div>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {pData?.cards.map((val, cIdx) => {
-                                            const isVisible = pData.visible[cIdx];
-                                            return <div key={cIdx} onClick={() => handleCardClick(p.id, cIdx)} className={`aspect-[3/4] rounded-lg shadow-sm flex items-center justify-center text-xl font-bold cursor-pointer transition-all duration-500 transform ${isVisible ? 'bg-white rotate-0' : 'bg-indigo-500 rotate-y-180'}`} style={{backgroundColor: isVisible ? 'white' : p.color}}>{isVisible ? val : <i className="fa-solid fa-gamepad text-white opacity-20"></i>}</div>;
-                                        })}
-                                    </div>
+                    
+                    {players.map(p => {
+                        const teamColor = p.teamId !== undefined ? TEAM_COLORS[p.teamId].border : 'border-white';
+                        return (
+                            <div key={p.id} className={`relative transition-all duration-300 ${p.finished || p.isDead ? 'opacity-50 scale-75' : 'hover:scale-125 hover:z-20'}`}>
+                                <div className={`rounded-full border-2 ${teamColor} p-[1px]`}>
+                                    <PlayerAvatar charId={p.characterId} size="sm" border={false} />
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-        };
-
-        const GameGuessColor = ({ G, myPlayerId, updateGame, players }) => {
-            const currentRound = G.rounds[G.currentRoundIndex];
-            if (G.phase === 'game_end') {
-                const sortedResults = [...G.results].sort((a, b) => a.timeMs - b.timeMs);
-                return (
-                    <div className="flex flex-col items-center w-full max-w-2xl mx-auto p-4 bg-white rounded-xl shadow-lg mt-8">
-                        <h2 className="text-3xl font-bold text-indigo-700 mb-6">🏆 Classifica Finale 🏆</h2>
-                        <div className="w-full space-y-4">{sortedResults.map((res, i) => { const p = players.find(x => x.id === res.guesserId); return (<div key={i} className={`flex items-center justify-between p-4 rounded-lg border-2 ${i===0 ? 'bg-yellow-50 border-yellow-400' : 'bg-gray-50 border-gray-200'}`}><div className="flex items-center gap-3"><div className="font-bold text-2xl text-gray-400 w-8">{i+1}°</div><div className="text-2xl">{p?.avatar}</div><div className="font-bold text-lg">{p?.name}</div></div><div className="font-mono text-xl font-bold text-indigo-600">{(res.timeMs / 1000).toFixed(2)}s</div></div>)})}</div>
-                        <div className="mt-8 text-center text-gray-500">Grazie per aver giocato!</div>
-                    </div>
-                );
-            }
-            const isLeader = myPlayerId === currentRound.leaderId;
-            const isGuesser = myPlayerId === currentRound.guesserId;
-            const leaderName = players.find(p => p.id === currentRound.leaderId)?.name;
-            const guesserName = players.find(p => p.id === currentRound.guesserId)?.name;
-            const [timerMs, setTimerMs] = React.useState(0);
-            React.useEffect(() => { let interval; if (G.phase === 'guessing') { interval = setInterval(() => { setTimerMs(Date.now() - G.roundStartTime); }, 100); } else { setTimerMs(0); } return () => clearInterval(interval); }, [G.phase, G.roundStartTime]);
-            const [selectedIndex, setSelectedIndex] = React.useState(null);
-            let displayColors = []; let canInteract = false; let statusText = ""; let subText = "";
-            if (G.phase === 'setup') {
-                if (isLeader) { displayColors = G.secretCode; canInteract = true; statusText = "TOCCA A TE: Crea la sequenza!"; subText = `L'indovino sarà ${guesserName}`; } 
-                else { displayColors = Array(8).fill('#ddd'); canInteract = false; statusText = `Turno di ${leaderName}`; subText = "Sta creando la sequenza segreta..."; }
-            } else if (G.phase === 'guessing') {
-                displayColors = G.currentGuess; canInteract = isGuesser;
-                if (isGuesser) { statusText = "INDOVINA ORA!"; subText = "Ordina i bicchieri il più velocemente possibile!"; } 
-                else { statusText = `Turno di ${guesserName}`; subText = "Sta cercando di indovinare..."; }
-            } else if (G.phase === 'round_end') {
-                displayColors = G.secretCode; canInteract = false; statusText = "Round Completato!"; subText = `${guesserName} ha impiegato ${((G.lastRoundTime || 0)/1000).toFixed(2)}s`;
-            }
-            const handleSlotClick = (idx) => {
-                if (!canInteract) return;
-                if (selectedIndex === null) setSelectedIndex(idx);
-                else {
-                    const newList = [...displayColors]; const temp = newList[selectedIndex]; newList[selectedIndex] = newList[idx]; newList[idx] = temp;
-                    if (G.phase === 'setup') updateGame({ secretCode: newList }); else updateGame({ currentGuess: newList });
-                    setSelectedIndex(null);
-                }
-            };
-            const confirmCode = () => { const shuffled = [...G.secretCode].sort(() => Math.random() - 0.5); updateGame({ phase: 'guessing', currentGuess: shuffled, roundStartTime: Date.now(), message: "Tempo partito!" }); setSelectedIndex(null); };
-            const checkGuess = () => {
-                let correctCount = 0; G.currentGuess.forEach((color, i) => { if (color === G.secretCode[i]) correctCount++; });
-                if (correctCount === 8) {
-                    const timeTaken = Date.now() - G.roundStartTime;
-                    const newResults = [...(G.results || []), { guesserId: currentRound.guesserId, timeMs: timeTaken }];
-                    updateGame({ phase: 'round_end', results: newResults, lastRoundTime: timeTaken, feedback: "CORRETTO!", message: "Round finito." });
-                } else updateGame({ feedback: `${correctCount} bicchieri corretti.`, message: "Riprova!" });
-            };
-            const nextRound = () => {
-                const nextIdx = G.currentRoundIndex + 1;
-                if (nextIdx >= G.rounds.length) updateGame({ phase: 'game_end' });
-                else updateGame({ phase: 'setup', currentRoundIndex: nextIdx, secretCode: [...GAME_COLORS], currentGuess: [], feedback: "" });
-            };
-            return (
-                <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
-                    <div className="bg-white rounded-xl shadow-lg p-6 w-full text-center mb-8 sticky top-0 z-20 border-b-4 border-indigo-200">
-                        <div className="flex justify-between items-center mb-2 px-2 text-sm font-bold text-gray-400 uppercase tracking-widest"><div>Round {G.currentRoundIndex + 1} / {G.rounds.length}</div>{G.phase === 'guessing' && <div className="text-red-500 text-xl font-mono">{(timerMs/1000).toFixed(1)}s</div>}</div>
-                        <h2 className="text-2xl font-bold text-gray-800">{statusText}</h2>
-                        <p className="text-gray-500 mb-2">{subText}</p>
-                        {G.feedback && <div className="text-indigo-600 font-bold text-lg mb-2 animate-pulse">{G.feedback}</div>}
-                        <div className="mt-4 h-12 flex justify-center">
-                            {G.phase === 'setup' && isLeader && <button onClick={confirmCode} className="bg-black text-white px-8 py-2 rounded-full font-bold shadow-lg btn-press hover:bg-gray-800">CONFERMA CODICE E AVVIA</button>}
-                            {G.phase === 'guessing' && isGuesser && <button onClick={checkGuess} className="bg-green-500 text-white px-8 py-2 rounded-full font-bold shadow-lg btn-press hover:bg-green-600">VERIFICA SEQUENZA</button>}
-                            {G.phase === 'round_end' && <button onClick={nextRound} className="bg-blue-500 text-white px-8 py-2 rounded-full font-bold shadow-lg btn-press hover:bg-blue-600">{G.currentRoundIndex + 1 >= G.rounds.length ? "VAI ALLA CLASSIFICA" : "PROSSIMO ROUND"}</button>}
-                        </div>
-                    </div>
-                    <div className="flex justify-center gap-2 sm:gap-4 flex-wrap bg-indigo-50 p-4 sm:p-8 rounded-2xl shadow-inner w-full">
-                        {displayColors.map((color, idx) => (
-                            <div key={idx} onClick={() => handleSlotClick(idx)} className={`relative w-12 h-16 sm:w-16 sm:h-24 flex items-end justify-center transition-all duration-200 ${canInteract ? 'cursor-pointer hover:-translate-y-2' : 'cursor-default'} ${selectedIndex === idx ? 'ring-4 ring-offset-2 ring-black scale-110 z-10' : ''}`}>
-                                <div className="absolute bottom-0 w-10 h-2 bg-black/20 rounded-full blur-sm"></div>
-                                <div className="cup-shape w-full h-full shadow-inner" style={{ backgroundColor: color, boxShadow: 'inset -5px 0 10px rgba(0,0,0,0.1)' }}><div className="absolute top-2 left-2 w-2 h-full bg-white/30 skew-x-12 rounded-full"></div></div>
-                                <div className="absolute -bottom-8 font-bold text-gray-400 text-sm">{idx + 1}</div>
+                                {p.skipTurns > 0 && <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-[10px] font-bold">{p.skipTurns}</div>}
+                                {p.finished && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full p-0.5"><Flag size={8}/></div>}
+                                {p.isDead && <div className="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center"><Skull className="text-white" size={14}/></div>}
                             </div>
-                        ))}
+                        );
+                    })}
+                </div>
+                
+                {isPendingTarget && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <Pointer className="text-yellow-600 animate-bounce w-8 h-8 drop-shadow-md fill-yellow-300" />
                     </div>
+                )}
+
+                {special && <div className={`text-[8px] md:text-[10px] text-center leading-tight truncate font-semibold opacity-80 ${hasGem ? 'text-white' : ''}`}>{special.name}</div>}
                 </div>
             );
         };
 
-        const GameDotsAndBoxes = ({ G, myPlayerId, updateGame, players }) => {
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            const [localRolling, setLocalRolling] = React.useState(false);
-            const [localDieVal, setLocalDieVal] = React.useState(1);
-            const animateAndRoll = () => {
-                if (localRolling) return;
-                setLocalRolling(true);
-                setTimeout(() => {
-                    const roll = Math.floor(Math.random() * 6) + 1;
-                    setLocalDieVal(roll);
-                    setLocalRolling(false);
-                    updateGame({ currentRoll: roll, movesLeft: roll, rolled: true, message: `${currentPlayer.name} ha ${roll} mosse!` });
-                }, 800);
-            };
-            const gridWidth = G.gridSize.cols;
-            const gridHeight = G.gridSize.rows;
-            const getLineId = (type, r, c) => `${type}-${r}-${c}`;
-            const handleLineClick = (type, r, c) => {
-                if (!isMyTurn || !G.rolled || G.movesLeft <= 0 || localRolling) return;
-                const lineId = getLineId(type, r, c);
-                if (G.lines[lineId]) return;
-                const newLines = { ...G.lines, [lineId]: currentPlayer.id };
-                let pointsGained = 0;
-                const newBoxes = { ...G.boxes };
-                const checkBox = (br, bc) => {
-                    if (br < 0 || bc < 0 || br >= gridHeight || bc >= gridWidth) return false;
-                    const top = newLines[getLineId('h', br, bc)];
-                    const bottom = newLines[getLineId('h', br+1, bc)];
-                    const left = newLines[getLineId('v', br, bc)];
-                    const right = newLines[getLineId('v', br, bc+1)];
-                    if (top && bottom && left && right && !newBoxes[`${br}-${bc}`]) {
-                        newBoxes[`${br}-${bc}`] = currentPlayer.id;
-                        return true;
-                    }
-                    return false;
-                };
-                if (type === 'h') {
-                    if (checkBox(r, c)) pointsGained++;
-                    if (checkBox(r-1, c)) pointsGained++;
+        // --- MAIN APP COMPONENT ---
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState('menu');
+            const [roomCode, setRoomCode] = useState('');
+            const [nickname, setNickname] = useState('');
+            const [currentRoom, setCurrentRoom] = useState(null);
+            const [isRolling, setIsRolling] = useState(false);
+            const [isMoving, setIsMoving] = useState(false); 
+            const [lastRoll, setLastRoll] = useState(null);
+            const [notif, setNotif] = useState(null); 
+            const [selectedCellInfo, setSelectedCellInfo] = useState(null);
+            const [useSpecialDie, setUseSpecialDie] = useState(false);
+            const [directionChoice, setDirectionChoice] = useState(null); // { val: number }
+            
+            const [errorMsg, setErrorMsg] = useState(null);
+            const [relayConfig, setRelayConfig] = useState({ teams: 2, size: 2 });
+
+            const handleError = (error) => {
+                console.error("Errore rilevato:", error);
+                if (error.code === "permission-denied" || error.message.includes("permission")) {
+                    setErrorMsg("Permesso negato: Controlla le regole del database Firebase o la configurazione.");
+                } else if (error.code === "auth/configuration-not-found" || error.code === "auth/operation-not-allowed") {
+                     setErrorMsg("Errore Autenticazione: Abilita 'Anonymous' in Firebase Console > Authentication.");
                 } else {
-                    if (checkBox(r, c)) pointsGained++;
-                    if (checkBox(r, c-1)) pointsGained++;
+                    setErrorMsg(error.message || "Si è verificato un errore sconosciuto.");
                 }
-                const newScores = { ...G.scores };
-                if (pointsGained > 0) newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + pointsGained;
-                const newMoves = G.movesLeft - 1;
-                let nextTurn = G.turnIndex;
-                let resetRolled = G.rolled;
-                let resetMsg = G.message;
-                const totalBoxes = gridWidth * gridHeight;
-                if (Object.keys(newBoxes).length === totalBoxes) {
-                    let winnerId = null; let maxScore = -1;
-                    players.forEach(p => {
-                        const s = newScores[p.id] || 0;
-                        if (s > maxScore) { maxScore = s; winnerId = p.id; }
-                        else if (s === maxScore) winnerId = 'draw';
-                    });
-                    updateGame({ lines: newLines, boxes: newBoxes, scores: newScores, movesLeft: 0, winner: winnerId, message: "Tutti i box sono chiusi!" });
-                    return;
-                }
-                if (newMoves <= 0) {
-                    nextTurn = (G.turnIndex + 1) % players.length;
-                    resetRolled = false;
-                    resetMsg = `Turno di ${players[nextTurn].name}`;
-                    setLocalDieVal(1);
-                } else {
-                    resetMsg = `${currentPlayer.name}: ancora ${newMoves} mosse!`;
-                }
-                updateGame({ lines: newLines, boxes: newBoxes, scores: newScores, movesLeft: newMoves, turnIndex: nextTurn, rolled: resetRolled, message: resetMsg });
-            };
-            const renderGrid = () => {
-                const elements = [];
-                for (let r = 0; r <= gridHeight; r++) {
-                    const dotRow = [];
-                    for (let c = 0; c <= gridWidth; c++) {
-                        dotRow.push(<div key={`dot-${r}-${c}`} className="w-2 h-2 sm:w-3 sm:h-3 bg-black rounded-full z-10 relative"></div>);
-                        if (c < gridWidth) {
-                            const lineId = getLineId('h', r, c);
-                            const ownerId = G.lines[lineId];
-                            const owner = players.find(p => p.id === ownerId);
-                            dotRow.push(<div key={`h-${r}-${c}`} onClick={() => handleLineClick('h', r, c)} className={`h-2 sm:h-3 flex-1 mx-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`} style={{ backgroundColor: owner ? owner.color : '#e5e7eb' }}></div>);
-                        }
-                    }
-                    elements.push(<div key={`row-dots-${r}`} className="flex items-center justify-between">{dotRow}</div>);
-                    if (r < gridHeight) {
-                        const boxRow = [];
-                        for (let c = 0; c <= gridWidth; c++) {
-                            const lineId = getLineId('v', r, c);
-                            const ownerId = G.lines[lineId];
-                            const owner = players.find(p => p.id === ownerId);
-                            boxRow.push(<div key={`v-${r}-${c}`} onClick={() => handleLineClick('v', r, c)} className={`w-2 sm:w-3 h-8 sm:h-12 my-[-1px] cursor-pointer transition-colors duration-200 ${ownerId ? '' : 'hover:bg-gray-400'}`} style={{ backgroundColor: owner ? owner.color : '#e5e7eb' }}></div>);
-                            if (c < gridWidth) {
-                                const boxOwnerId = G.boxes[`${r}-${c}`];
-                                const boxOwner = players.find(p => p.id === boxOwnerId);
-                                boxRow.push(<div key={`box-${r}-${c}`} className="flex-1 h-8 sm:h-12 flex items-center justify-center transition-all duration-500" style={boxOwnerId ? { background: `linear-gradient(135deg, ${boxOwner.color} 0%, rgba(255,255,255,0.8) 100%)` } : {}}>{boxOwnerId && <span className="text-sm sm:text-xl drop-shadow-md">{boxOwner.avatar}</span>}</div>);
-                            }
-                        }
-                        elements.push(<div key={`row-boxes-${r}`} className="flex">{boxRow}</div>);
-                    }
-                }
-                return elements;
-            };
-            return (
-                <div className="flex flex-col items-center w-full max-w-3xl mx-auto p-2">
-                    {G.winner ? (
-                         <div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">🎉 {players.find(p=>p.id===G.winner)?.name || "Pareggio"} Ha Vinto! 🎉</div>
-                    ) : (
-                        <div className="flex flex-col items-center w-full mb-4 sticky top-16 z-20">
-                            <h2 className="text-xl font-bold bg-white px-4 py-2 rounded-full shadow mb-2">Turno di {currentPlayer.name}</h2>
-                            <div className="flex items-center gap-4 bg-white p-2 rounded-xl shadow-lg border">
-                                <Die value={G.rolled ? G.currentRoll : localDieVal} shaking={localRolling} />
-                                {isMyTurn && !G.rolled && !localRolling && <button onClick={animateAndRoll} className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md btn-press">LANCIA</button>}
-                                <div className="font-bold text-gray-500 w-32 text-center">{G.rolled ? `Mosse: ${G.movesLeft}` : "Tira il dado!"}</div>
-                            </div>
-                        </div>
-                    )}
-                    <div className="flex flex-wrap justify-center gap-4 mb-4 w-full">
-                        {players.map(p => (
-                            <div key={p.id} className={`flex items-center gap-2 px-3 py-1 rounded-full border-2 ${G.scores[p.id] > 0 ? 'bg-white' : 'bg-gray-100'}`} style={{borderColor: p.color}}>
-                                <span>{p.avatar}</span><span className="font-bold">{G.scores[p.id] || 0}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl border-4 border-gray-100 w-full select-none" style={{touchAction: 'none'}}>{renderGrid()}</div>
-                </div>
-            );
-        };
-
-        const GameRandomDots = ({ G, myPlayerId, updateGame, players }) => {
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            const [localRolling, setLocalRolling] = React.useState(false);
-            const [localDieVal, setLocalDieVal] = React.useState(1);
-            const [dragStart, setDragStart] = React.useState(null); 
-            const [dragCurrent, setDragCurrent] = React.useState(null); 
-            const svgRef = React.useRef(null);
-
-            React.useEffect(() => {
-                if (!G.nodes || G.nodes.length === 0) {
-                    const width = 350; const height = 450; const radius = 35;
-                    const newNodes = []; let attempts = 0; const maxNodes = 35;
-                    while(newNodes.length < maxNodes && attempts < 2000) {
-                        const x = 30 + Math.random() * (width - 60);
-                        const y = 30 + Math.random() * (height - 60);
-                        let valid = true;
-                        for(let n of newNodes) if (Math.hypot(n.x - x, n.y - y) < radius) { valid = false; break; }
-                        if (valid) newNodes.push({ id: newNodes.length, x, y });
-                        attempts++;
-                    }
-                    updateGame({ nodes: newNodes });
-                }
-            }, []);
-
-            if (!G.nodes || G.nodes.length === 0) return <div className="text-center p-10 font-bold">Generazione caos in corso...</div>;
-
-            const animateAndRoll = () => {
-                if (localRolling) return;
-                setLocalRolling(true);
-                setTimeout(() => {
-                    const roll = Math.floor(Math.random() * 6) + 1;
-                    setLocalDieVal(roll);
-                    setLocalRolling(false);
-                    updateGame({ currentRoll: roll, movesLeft: roll, rolled: true, message: `${currentPlayer.name} ha ${roll} mosse!` });
-                }, 800);
+                setTimeout(() => setErrorMsg(null), 8000); 
             };
 
-            const getCoordinates = (e) => {
-                if (!svgRef.current) return { x: 0, y: 0 };
-                const svg = svgRef.current;
-                const pt = svg.createSVGPoint();
-                if (e.touches && e.touches.length > 0) { pt.x = e.touches[0].clientX; pt.y = e.touches[0].clientY; }
-                else if (e.changedTouches && e.changedTouches.length > 0) { pt.x = e.changedTouches[0].clientX; pt.y = e.changedTouches[0].clientY; }
-                else { pt.x = e.clientX; pt.y = e.clientY; }
-                const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-                return { x: svgP.x, y: svgP.y };
-            };
-
-            const orientation = (p, q, r) => {
-                const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-                if (val === 0) return 0;
-                return (val > 0) ? 1 : 2;
-            };
-            const doIntersect = (p1, q1, p2, q2) => {
-                const o1 = orientation(p1, q1, p2); const o2 = orientation(p1, q1, q2);
-                const o3 = orientation(p2, q2, p1); const o4 = orientation(p2, q2, q1);
-                if (o1 !== o2 && o3 !== o4) return true;
-                return false;
-            };
-
-            const findShortestCycle = (startId, endId, currentEdges) => {
-                const adj = {};
-                currentEdges.forEach(e => {
-                    if(!adj[e.u]) adj[e.u] = []; if(!adj[e.v]) adj[e.v] = [];
-                    adj[e.u].push(e.v); adj[e.v].push(e.u);
-                });
-                const queue = [[endId, [endId]]]; const visited = new Set(); visited.add(endId);
-                while(queue.length > 0) {
-                    const [node, path] = queue.shift();
-                    if (node === startId) return path;
-                    const neighbors = adj[node] || [];
-                    for(let neighbor of neighbors) {
-                        if (!visited.has(neighbor)) { visited.add(neighbor); queue.push([neighbor, [...path, neighbor]]); }
-                    }
-                }
-                return null;
-            };
-
-            const attemptConnection = (n1, n2) => {
-                if (!isMyTurn || !G.rolled || G.movesLeft <= 0) return;
-                const u = Math.min(n1.id, n2.id); const v = Math.max(n1.id, n2.id);
-                if (G.edges.some(e => e.u === u && e.v === v)) return;
-                for (let e of G.edges) {
-                    const nA = G.nodes[e.u]; const nB = G.nodes[e.v];
-                    if (nA.id === n1.id || nA.id === n2.id || nB.id === n1.id || nB.id === n2.id) continue;
-                    if (doIntersect(n1, n2, nA, nB)) { alert("Non puoi incrociare le linee!"); return; }
-                }
-                const cyclePath = findShortestCycle(u, v, G.edges);
-                const newEdges = [...G.edges, { u, v, ownerId: currentPlayer.id }];
-                const newPolygons = [...G.polygons];
-                const newScores = { ...G.scores };
-                let pointsGained = 0;
-                if (cyclePath) {
-                    pointsGained = 1; newScores[currentPlayer.id] = (newScores[currentPlayer.id] || 0) + 1;
-                    newPolygons.push({ points: cyclePath, ownerId: currentPlayer.id });
-                }
-                const newMoves = G.movesLeft - 1;
-                let nextTurn = G.turnIndex; let resetRolled = G.rolled; let resetMsg = G.message;
-                if (newMoves <= 0) {
-                    nextTurn = (G.turnIndex + 1) % players.length; resetRolled = false;
-                    resetMsg = `Turno di ${players[nextTurn].name}`; setLocalDieVal(1);
-                } else {
-                    resetMsg = `${currentPlayer.name}: ancora ${newMoves} mosse!`;
-                }
-                updateGame({ edges: newEdges, polygons: newPolygons, scores: newScores, movesLeft: newMoves, turnIndex: nextTurn, rolled: resetRolled, message: pointsGained > 0 ? "Ciclo Chiuso! +1 Punto!" : resetMsg });
-            };
-
-            const handleStart = (n, e) => {
-                if (!isMyTurn || !G.rolled || G.movesLeft <= 0) return;
-                e.stopPropagation();
-                if (e.cancelable) e.preventDefault();
-                setDragStart(n);
-                setDragCurrent({ x: n.x, y: n.y });
-            };
-            const handleMove = (e) => {
-                if (!dragStart) return;
-                if (e.cancelable) e.preventDefault();
-                setDragCurrent(getCoordinates(e));
-            };
-            const handleEnd = (e) => {
-                if (!dragStart) return;
-                if (e.cancelable) e.preventDefault();
-                const coords = getCoordinates(e);
-                const threshold = 40;
-                const target = G.nodes.find(n => Math.hypot(n.x - coords.x, n.y - coords.y) < threshold);
-                if (target && target.id !== dragStart.id) { attemptConnection(dragStart, target); }
-                setDragStart(null); setDragCurrent(null);
-            };
-
-            return (
-                <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-2">
-                    <div className="flex flex-col items-center w-full mb-4 sticky top-16 z-20">
-                        <h2 className="text-xl font-bold bg-white px-4 py-2 rounded-full shadow mb-2">Turno di {currentPlayer.name}</h2>
-                        <div className="flex items-center gap-4 bg-white p-2 rounded-xl shadow-lg border">
-                            <Die value={G.rolled ? G.currentRoll : localDieVal} shaking={localRolling} />
-                            {isMyTurn && !G.rolled && !localRolling && <button onClick={animateAndRoll} className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md btn-press">LANCIA</button>}
-                            <div className="font-bold text-gray-500 w-32 text-center">{G.rolled ? `Mosse: ${G.movesLeft}` : "Tira il dado!"}</div>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-4 mb-4 w-full">
-                        {players.map(p => (
-                            <div key={p.id} className={`flex items-center gap-2 px-3 py-1 rounded-full border-2 ${G.scores[p.id] > 0 ? 'bg-white' : 'bg-gray-100'}`} style={{borderColor: p.color}}>
-                                <span>{p.avatar}</span><span className="font-bold">{G.scores[p.id] || 0}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="bg-white rounded-xl shadow-2xl border-4 border-gray-100 w-full overflow-hidden select-none" style={{touchAction: 'none'}}>
-                         <svg ref={svgRef} width="100%" height="500" viewBox="0 0 350 450" onMouseMove={handleMove} onMouseUp={handleEnd} onTouchMove={handleMove} onTouchEnd={handleEnd} style={{cursor: isMyTurn && G.rolled ? 'crosshair' : 'default'}}>
-                            {G.polygons && G.polygons.map((poly, i) => {
-                                const owner = players.find(p => p.id === poly.ownerId);
-                                const pts = poly.points.map(pid => { const n = G.nodes.find(node => node.id === pid); return `${n.x},${n.y}`; }).join(' ');
-                                return <polygon key={i} points={pts} fill={owner ? owner.color : '#ccc'} fillOpacity="0.4" stroke="none" />;
-                            })}
-                            {G.edges && G.edges.map((e, i) => {
-                                const n1 = G.nodes.find(n => n.id === e.u); const n2 = G.nodes.find(n => n.id === e.v);
-                                const owner = players.find(p => p.id === e.ownerId);
-                                return <line key={i} x1={n1.x} y1={n1.y} x2={n2.x} y2={n2.y} stroke={owner ? owner.color : '#333'} strokeWidth="4" strokeLinecap="round" />;
-                            })}
-                            {dragStart && dragCurrent && <line x1={dragStart.x} y1={dragStart.y} x2={dragCurrent.x} y2={dragCurrent.y} stroke="#888" strokeWidth="3" strokeDasharray="5,5" />}
-                            {G.nodes.map((n) => (
-                                <circle key={n.id} cx={n.x} cy={n.y} r="10" fill={dragStart && dragStart.id === n.id ? "#000" : "#555"} onMouseDown={(e) => handleStart(n, e)} onTouchStart={(e) => handleStart(n, e)} className="transition-all cursor-pointer" />
-                            ))}
-                        </svg>
-                    </div>
-                     <div className="text-center text-gray-400 mt-2 text-sm italic">Chiudi qualsiasi forma per fare punti!</div>
-                </div>
-            );
-        };
-
-        const GameMines = ({ G, myPlayerId, updateGame, players }) => {
-            const myPlayerIndex = players.findIndex(p => p.id === myPlayerId);
-            const isMyTurn = G.turnIndex === myPlayerIndex;
-            const currentPlayer = players[G.turnIndex];
-            const [localMines, setLocalMines] = React.useState([]);
-            const handleSetupClick = (idx) => {
-                if (localMines.includes(idx)) setLocalMines(localMines.filter(m => m !== idx));
-                else if (localMines.length < 3) setLocalMines([...localMines, idx]);
-            };
-            const confirmSetup = () => {
-                if (localMines.length !== 3) return;
-                const newBoards = { ...G.boards, [myPlayerId]: { mines: localMines, revealed: [] } };
-                const newSetupDone = [...G.setupDone, myPlayerId];
-                let nextPhase = G.phase;
-                let msg = "In attesa dell'avversario...";
-                if (newSetupDone.length === players.length) { nextPhase = 'playing'; msg = `Inizia ${players[0].name}!`; }
-                updateGame({ boards: newBoards, setupDone: newSetupDone, phase: nextPhase, message: msg });
-            };
-            const handlePlayClick = (targetId, idx) => {
-                if (!isMyTurn || G.phase !== 'playing') return;
-                const targetBoard = G.boards[targetId];
-                if (targetBoard.revealed.includes(idx)) return;
-                const newRevealed = [...targetBoard.revealed, idx];
-                const newBoards = { ...G.boards, [targetId]: { ...targetBoard, revealed: newRevealed } };
-                const isMine = targetBoard.mines.includes(idx);
-                let newLives = { ...G.lives };
-                let msg = isMine ? "💥 BOOM! Hai perso una vita!" : "😅 Salvo!";
-                let winner = null;
-                if (isMine) {
-                    newLives[myPlayerId] = (newLives[myPlayerId] || 3) - 1;
-                    if (newLives[myPlayerId] <= 0) { winner = targetId; msg = `💀 ${currentPlayer.name} è esploso! Vince ${players.find(p=>p.id===targetId).name}!`; }
-                }
-                updateGame({ boards: newBoards, lives: newLives, turnIndex: (G.turnIndex + 1) % players.length, message: msg, winner: winner });
-            };
-            if (G.phase === 'setup') {
-                const isDone = G.setupDone.includes(myPlayerId);
-                return (
-                    <div className="flex flex-col items-center w-full p-4">
-                        <h2 className="text-2xl font-bold mb-4 text-center">Posiziona le tue 3 mine!</h2>
-                        {!isDone ? (
-                            <div className="grid grid-cols-5 gap-2 mb-4">
-                                {Array(20).fill(null).map((_, i) => (
-                                    <div key={i} onClick={() => handleSetupClick(i)} className={`w-12 h-16 sm:w-16 sm:h-24 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${localMines.includes(i) ? 'bg-red-500 border-red-700 text-white' : 'bg-gray-200 border-gray-400 hover:bg-gray-300'}`}>{localMines.includes(i) && <i className="fa-solid fa-bomb text-2xl"></i>}</div>
-                                ))}
-                            </div>
-                        ) : <div className="text-gray-500 italic mb-4 animate-pulse">Setup completato. Attendi...</div>}
-                        {!isDone && <button onClick={confirmSetup} disabled={localMines.length !== 3} className={`px-8 py-3 rounded-full font-bold shadow-lg btn-press ${localMines.length === 3 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>PRONTO ({localMines.length}/3)</button>}
-                         <div className="mt-4 text-sm text-gray-500">Giocatori pronti: {G.setupDone.length}/{players.length}</div>
-                    </div>
-                );
-            }
-            if (G.winner) return <div className="flex flex-col items-center p-10"><div className="text-4xl mb-4">💀</div><div className="text-3xl font-bold text-green-600 animate-bounce mb-10 text-center">{G.message}</div><div className="text-gray-500">Partita terminata</div></div>;
-            const targetPlayer = players.find(p => p.id !== currentPlayer.id);
-            const isMe = currentPlayer.id === myPlayerId;
-            const boardOwnerId = isMe ? targetPlayer.id : myPlayerId;
-            const boardData = G.boards[boardOwnerId];
-            return (
-                <div className="flex flex-col items-center w-full max-w-2xl mx-auto p-2">
-                    <div className="flex justify-between w-full bg-white p-4 rounded-xl shadow mb-6 sticky top-0 z-10">
-                        {players.map(p => (
-                            <div key={p.id} className={`flex flex-col items-center ${currentPlayer.id === p.id ? 'opacity-100 scale-110' : 'opacity-60'}`}>
-                                <div className="text-2xl">{p.avatar}</div><div className="font-bold text-xs">{p.name}</div>
-                                <div className="flex gap-1 mt-1">{Array(3).fill(null).map((_, i) => <i key={i} className={`fa-solid fa-heart text-xs ${i < (G.lives[p.id]) ? 'text-red-500' : 'text-gray-300'}`}></i>)}</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="text-center mb-4"><h2 className="text-xl font-bold">{isMe ? "Tocca a te! Trova una casella sicura" : `Turno di ${currentPlayer.name}...`}</h2><p className={`font-bold ${G.message.includes("BOOM") ? 'text-red-600 animate-bounce' : 'text-gray-500'}`}>{G.message}</p></div>
-                    <div className="grid grid-cols-5 gap-2 sm:gap-4 p-4 bg-gray-100 rounded-xl border-4 border-gray-300">
-                        {Array(20).fill(null).map((_, i) => {
-                            const isRev = boardData.revealed.includes(i); const isMin = boardData.mines.includes(i);
-                            const showMin = !isMe && isMin && !isRev;
-                            return (
-                                <button key={i} onClick={() => isMe ? handlePlayClick(boardOwnerId, i) : null} disabled={!isMe || isRev} className={`w-12 h-16 sm:w-16 sm:h-24 rounded-lg flex items-center justify-center text-2xl transition-all duration-300 relative ${isRev ? (isMin ? 'bg-red-500 border-red-700' : 'bg-green-100 border-green-300') : (isMe ? 'bg-white border-b-4 border-gray-300 hover:mt-1 hover:border-b-0 active:scale-95' : 'bg-white border-gray-200 cursor-default')} ${showMin ? 'opacity-90 ring-2 ring-red-200' : ''}`}>
-                                    {isRev && isMin && <i className="fa-solid fa-bomb text-white animate-ping"></i>}
-                                    {isRev && !isMin && <i className="fa-solid fa-check text-green-500"></i>}
-                                    {showMin && <i className="fa-solid fa-bomb text-red-200 text-sm absolute top-1 right-1"></i>}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-        };
-
-        const App = () => {
-            const [user, setUser] = React.useState(null);
-            const [localState, setLocalState] = React.useState(null);
-            const [mode, setMode] = React.useState('home');
-            const [profile, setProfile] = React.useState({ name: 'Player', color: COLORS[0], avatar: AVATARS[0] });
-            const [activeLobbyId, setActiveLobbyId] = React.useState(null);
-            const [gameData, setGameData] = React.useState(null);
-            const [isOnline, setIsOnline] = React.useState(true);
-            const [joinCode, setJoinCode] = React.useState('');
-
-            React.useEffect(() => {
+            useEffect(() => {
                 const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                    else await signInAnonymously(auth);
+                try {
+                    await signInAnonymously(auth);
+                } catch (e) {
+                    handleError(e);
+                }
                 };
                 initAuth();
-                return onAuthStateChanged(auth, u => { if(u) { setUser(u); const s=localStorage.getItem('bg_profile'); if(s) setProfile(JSON.parse(s)); } });
+                return onAuthStateChanged(auth, u => setUser(u));
             }, []);
 
-            React.useEffect(() => {
-                if (!activeLobbyId || !isOnline || !user) return;
-                const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', activeLobbyId), s => {
-                    if (s.exists()) setGameData(s.data());
-                    else { setActiveLobbyId(null); setMode('home'); alert("Stanza chiusa."); }
+            useEffect(() => {
+                if (!roomCode || !user) return;
+                const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        setCurrentRoom(data);
+                        if (data.status === 'playing' && view !== 'game') setView('game');
+                        if (data.status === 'waiting' && view !== 'lobby') setView('lobby');
+                    } else {
+                        setView('menu');
+                    }
+                }, (err) => {
+                    handleError(err);
                 });
                 return () => unsub();
-            }, [activeLobbyId, isOnline, user]);
+            }, [roomCode, view, user]);
 
-            const updateProfile = (newP) => { setProfile(newP); localStorage.setItem('bg_profile', JSON.stringify(newP)); };
-
-            const createLobby = async (modeId) => {
-                if (isOnline && !user) { alert("Attendi il caricamento dell'account..."); return; }
-                let initial = { turnIndex: 0, message: "Inizia!", finishedPlayers: [] };
-                if (modeId === 1) initial = { ...initial, boards: {}, dice: [1,1], rolled: false, usedDice: [] };
-                else if (modeId === 2) initial = { ...initial, glasses: [], remainingMoves: 0 };
-                else if (modeId === 3) initial = { ...initial, playerData: {}, waitingReset: false };
-                else if (modeId === 4) initial = { ...initial, phase: 'setup', secretCode: [...GAME_COLORS], currentGuess: [], results: [], rounds: [], currentRoundIndex: 0 };
-                else if (modeId === 5) initial = { ...initial, lines: {}, boxes: {}, scores: {}, gridSize: { rows: 4, cols: 4 }, movesLeft: 0, rolled: false, currentRoll: 1 };
-                else if (modeId === 6) initial = { ...initial, edges: [], polygons: [], scores: {}, nodes: [], movesLeft: 0, rolled: false, currentRoll: 1 };
-                else if (modeId === 7) initial = { phase: 'setup', boards: {}, lives: {}, setupDone: [], turnIndex: 0, message: "Posiziona 3 mine sul tuo campo!" };
-                const hostId = user ? user.uid : 'local_host';
-                const newLobby = { hostId: hostId, modeId, status: 'waiting', createdAt: Date.now(), players: [{ id: hostId, name: profile.name, color: profile.color, avatar: profile.avatar }], gameState: initial };
-                if (isOnline) {
-                    const code = generateCode();
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', code), newLobby);
-                    setActiveLobbyId(code);
-                } else {
-                    const local = { ...newLobby, players: [...newLobby.players, { id: 'local_p2', name: 'Giocatore 2', color: COLORS[1], avatar: AVATARS[1] }]};
-                    setGameData(local); setLocalState(local); setActiveLobbyId('LOCAL');
+            useEffect(() => {
+                if (currentRoom?.lastAction) {
+                setNotif(currentRoom.lastAction);
+                const t = setTimeout(() => setNotif(null), 3000);
+                return () => clearTimeout(t);
                 }
-                setMode('lobby');
+            }, [currentRoom?.lastAction]);
+
+            // Host Logic for Infection
+            useEffect(() => {
+                if (currentRoom?.status === 'playing' && currentRoom.gameMode === 'infection' && currentRoom.hostId === user?.uid) {
+                    if (currentRoom.currentTurn === 0 && currentRoom.round > 3 && !isMoving && !isRolling) {
+                        // Check if infected needs to move (simple check: did we already move this round? stored in infected.lastMovedRound)
+                        if (currentRoom.infectedNPC?.lastMovedRound < currentRoom.round) {
+                            moveInfectedNPC();
+                        }
+                    }
+                }
+            }, [currentRoom, user, isMoving, isRolling]);
+
+            const moveInfectedNPC = async () => {
+                try {
+                    const steps = [1, 2, 4, 6];
+                    const roll = steps[Math.floor(Math.random() * steps.length)];
+                    let npcPos = currentRoom.infectedNPC.position;
+                    let newPos = npcPos + roll;
+                    
+                    let updates = {
+                        'infectedNPC.position': newPos,
+                        'infectedNPC.lastMovedRound': currentRoom.round,
+                        lastAction: `L'INFETTO avanza di ${roll} passi!`
+                    };
+
+                    // Check collisions
+                    let updatedPlayers = [...currentRoom.players];
+                    let killCount = 0;
+                    updatedPlayers = updatedPlayers.map(p => {
+                        if (!p.isDead && !p.finished && p.position <= newPos) {
+                            killCount++;
+                            return { ...p, isDead: true, position: 0 };
+                        }
+                        return p;
+                    });
+
+                    if (killCount > 0) {
+                        updates.players = updatedPlayers;
+                        updates.lastAction += ` Ha preso ${killCount} sopravvissuti!`;
+                        playSound('zombie');
+                    } else {
+                        playSound('step');
+                    }
+
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), updates);
+                } catch(e) { console.error(e); }
             };
 
-            const joinLobby = async () => {
-                if (!joinCode || !user) return;
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', joinCode.toUpperCase());
-                const snap = await getDoc(ref);
-                if (snap.exists() && snap.data().status === 'waiting' && snap.data().players.length < MODES.find(m=>m.id===snap.data().modeId).maxPlayers) {
-                    await updateDoc(ref, { players: [...snap.data().players, { id: user.uid, name: profile.name, color: profile.color, avatar: profile.avatar }] });
-                    setActiveLobbyId(joinCode.toUpperCase()); setMode('lobby');
-                } else alert("Impossibile entrare.");
+            const createRoom = async (mode) => {
+                if (!nickname || !user) return;
+                try {
+                    const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+                    const charId = Math.floor(Math.random() * ROSTER.length);
+                    
+                    let extraData = {};
+                    if (mode === 'infection') {
+                        extraData.infectedNPC = { position: 0, lastMovedRound: 0 };
+                    }
+                    if (mode === 'gem_hunt') {
+                        // 3 random unique gems between 5 and 45
+                        const gems = [];
+                        while(gems.length < 3) {
+                            const r = Math.floor(Math.random() * 40) + 5;
+                            if(!gems.includes(r)) gems.push(r);
+                        }
+                        extraData.gemLocations = gems;
+                    }
+
+                    const startPos = mode === 'gem_hunt' ? (Math.random() > 0.5 ? 0 : 50) : 0;
+
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', code), {
+                        code,
+                        hostId: user.uid,
+                        gameMode: mode, 
+                        teamConfig: mode === 'relay' ? relayConfig : null,
+                        status: 'waiting',
+                        currentTurn: 0,
+                        round: 1, 
+                        ...extraData,
+                        players: [{
+                            uid: user.uid,
+                            name: nickname,
+                            characterId: charId,
+                            position: startPos,
+                            skipTurns: 0,
+                            finished: false,
+                            isDead: false,
+                            rank: 0,
+                            isBot: false,
+                            pendingTarget: null,
+                            ...(mode === 'relay' ? { teamId: 0 } : {}),
+                            ...(mode === 'gem_hunt' ? { collectedGems: [] } : {}),
+                            pawnIdx: 0 
+                        }],
+                        lastAction: "Stanza Creata"
+                    });
+                    setRoomCode(code);
+                    setView('lobby');
+                } catch (e) {
+                    handleError(e);
+                }
+            };
+
+            const joinRoom = async () => {
+                if (!nickname || !user || !roomCode) return;
+                try {
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode.toUpperCase());
+                    const snap = await getDoc(ref);
+                    if (!snap.exists()) {
+                        setErrorMsg("Stanza non trovata!");
+                        return;
+                    }
+                    
+                    const data = snap.data();
+                    if (data.status !== 'waiting') {
+                        setErrorMsg("La partita è già iniziata!");
+                        return;
+                    }
+                    if (data.players.some(p => p.uid === user.uid)) { setView('lobby'); return; }
+
+                    const available = ROSTER.map(c=>c.id).filter(id => !data.players.some(p=>p.characterId === id));
+                    const charId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
+
+                    let bestTeam = 0;
+                    if (data.gameMode === 'relay') {
+                        const counts = Array(data.teamConfig.teams).fill(0);
+                        data.players.forEach(p => counts[p.teamId]++);
+                        bestTeam = counts.indexOf(Math.min(...counts));
+                    }
+                    
+                    const startPos = data.gameMode === 'gem_hunt' ? (Math.random() > 0.5 ? 0 : 50) : 0;
+
+                    const playerObj = {
+                        uid: user.uid,
+                        name: nickname,
+                        characterId: charId,
+                        position: startPos,
+                        skipTurns: 0,
+                        finished: false,
+                        isDead: false,
+                        rank: 0,
+                        isBot: false,
+                        pendingTarget: null,
+                        pawnIdx: 0
+                    };
+                    if (data.gameMode === 'relay') playerObj.teamId = bestTeam;
+                    if (data.gameMode === 'gem_hunt') playerObj.collectedGems = [];
+
+                    await updateDoc(ref, {
+                        players: arrayUnion(playerObj)
+                    });
+                    setView('lobby');
+                } catch (e) {
+                    handleError(e);
+                }
+            };
+
+            const switchTeam = async (newTeamId) => {
+                if (!currentRoom) return;
+                try {
+                    const updated = currentRoom.players.map(p => p.uid === user.uid ? { ...p, teamId: newTeamId } : p);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: updated });
+                } catch (e) {
+                    handleError(e);
+                }
+            };
+
+            const selectChar = async (charId) => {
+                if (!currentRoom) return;
+                try {
+                    if (currentRoom.players.some(p => p.characterId === charId)) return;
+                    const updated = currentRoom.players.map(p => p.uid === user.uid ? { ...p, characterId: charId } : p);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: updated });
+                } catch (e) {
+                    handleError(e);
+                }
+            };
+
+            const addBot = async () => {
+                if (!currentRoom) return;
+                try {
+                    const available = ROSTER.map(c=>c.id).filter(id => !currentRoom.players.some(p=>p.characterId === id));
+                    const charId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
+                    const botId = `bot_${Date.now()}`;
+                    
+                    let bestTeam = 0;
+                    if (currentRoom.gameMode === 'relay') {
+                        const counts = Array(currentRoom.teamConfig.teams).fill(0);
+                        currentRoom.players.forEach(p => counts[p.teamId]++);
+                        bestTeam = counts.indexOf(Math.min(...counts));
+                    }
+
+                    const startPos = currentRoom.gameMode === 'gem_hunt' ? (Math.random() > 0.5 ? 0 : 50) : 0;
+
+                    const newBot = {
+                        uid: botId,
+                        name: `BOT ${ROSTER[charId].name.split(' ')[0]}`,
+                        characterId: charId,
+                        position: startPos,
+                        skipTurns: 0,
+                        finished: false,
+                        isDead: false,
+                        rank: 0,
+                        isBot: true,
+                        pendingTarget: null,
+                        pawnIdx: 0
+                    };
+                    if (currentRoom.gameMode === 'relay') newBot.teamId = bestTeam;
+                    if (currentRoom.gameMode === 'gem_hunt') newBot.collectedGems = [];
+                    
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                        players: [...currentRoom.players, newBot]
+                    });
+                } catch (e) {
+                    handleError(e);
+                }
             };
 
             const startGame = async () => {
-                let finalState = { ...gameData.gameState }; const playerCount = gameData.players.length;
-                if (gameData.modeId === 1) gameData.players.forEach(p => finalState.boards[p.id] = []);
-                else if (gameData.modeId === 2) {
-                    if (playerCount !== 2) { alert("Servono 2 giocatori"); return; }
-                    const empty = Array(13).fill(null);
-                    finalState.glasses = [ { ownerId: gameData.players[0].id, dots: [...empty] }, { ownerId: null, dots: [...empty] }, { ownerId: gameData.players[1].id, dots: [...empty] } ];
-                } else if (gameData.modeId === 3) gameData.players.forEach(p => { finalState.playerData[p.id] = { cards: [1,2,3,4,5,6,7,8,9,10].sort(()=>Math.random()-0.5), visible: Array(10).fill(false), target: 1 }; });
-                else if (gameData.modeId === 4) {
-                    const ps = gameData.players;
-                    finalState.rounds = ps.map((p, i) => ({ guesserId: p.id, leaderId: ps[(i - 1 + ps.length) % ps.length].id }));
-                    finalState.currentRoundIndex = 0; finalState.phase = 'setup';
-                } else if (gameData.modeId === 5 || gameData.modeId === 6) {
-                    let size = playerCount === 3 ? 7 : (playerCount >= 4 ? 8 : 6);
-                    finalState.gridSize = { rows: size, cols: size };
-                    finalState.lines = {}; finalState.boxes = {}; finalState.scores = {};
-                    gameData.players.forEach(p => finalState.scores[p.id] = 0);
-                } else if (gameData.modeId === 7) {
-                    if (playerCount < 2) { alert("Servono 2 giocatori!"); return; }
-                    gameData.players.forEach(p => { finalState.boards[p.id] = { mines: [], revealed: [] }; finalState.lives[p.id] = 3; });
+                try {
+                    let gamePlayers = [...currentRoom.players];
+
+                    // Relay Expansion Logic
+                    if (currentRoom.gameMode === 'relay') {
+                        // ... (same as before) ...
+                         const expandedPlayers = [];
+                        const teamSize = currentRoom.teamConfig.size;
+                        const numTeams = currentRoom.teamConfig.teams;
+
+                        const teamUsers = Array.from({ length: numTeams }, () => []);
+                        gamePlayers.forEach(p => {
+                            if (p.teamId < numTeams) teamUsers[p.teamId].push(p);
+                        });
+
+                        for (let t = 0; t < numTeams; t++) {
+                            const users = teamUsers[t];
+                            if (users.length === 0) continue; 
+
+                            for (let slot = 0; slot < teamSize; slot++) {
+                                const userIndex = slot % users.length;
+                                const baseUser = users[userIndex];
+
+                                let charId = baseUser.characterId;
+                                if (slot >= users.length) {
+                                    const usedChars = new Set([...gamePlayers.map(p => p.characterId), ...expandedPlayers.map(p => p.characterId)]);
+                                    const available = ROSTER.map(c => c.id).filter(id => !usedChars.has(id));
+                                    charId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : 0;
+                                }
+
+                                expandedPlayers.push({
+                                    ...baseUser,
+                                    id: `${baseUser.uid}_slot${slot}`, 
+                                    pawnIdx: slot,
+                                    characterId: charId,
+                                    position: 0,
+                                    finished: false,
+                                    skipTurns: 0,
+                                    pendingTarget: null
+                                });
+                            }
+                        }
+                        
+                        gamePlayers = [];
+                        for(let slot=0; slot<teamSize; slot++) {
+                            for(let t=0; t<numTeams; t++) {
+                                const pawn = expandedPlayers.find(p => p.teamId === t && p.pawnIdx === slot);
+                                if(pawn) gamePlayers.push(pawn);
+                            }
+                        }
+                    } else {
+                        gamePlayers = gamePlayers.map(p => ({...p, id: p.uid}));
+                    }
+
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { 
+                        status: 'playing', 
+                        lastAction: currentRoom.gameMode === 'gem_hunt' ? "Caccia alle Gemme iniziata!" : (currentRoom.gameMode === 'infection' ? "Sopravvivete all'Infetto!" : "La staffetta ha inizio!"),
+                        players: gamePlayers,
+                        currentTurn: 0
+                    });
+                } catch (e) {
+                    handleError(e);
                 }
-                const updates = { status: 'playing', gameState: finalState };
-                if (isOnline) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', activeLobbyId), updates);
-                else { const n = { ...gameData, ...updates }; setGameData(n); setLocalState(n); }
             };
 
-            const updateGame = async (parts) => {
-                const next = { ...gameData.gameState, ...parts };
-                if (isOnline) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobbies', activeLobbyId), { gameState: next });
-                else { const n = { ...localState, gameState: next }; setGameData(n); setLocalState(n); }
+            const isPawnLocked = (pawn, allPlayers) => {
+                if (currentRoom.gameMode !== 'relay') return false;
+                if (pawn.pawnIdx === 0) return false; 
+                
+                const teammate = allPlayers.find(p => p.teamId === pawn.teamId && p.pawnIdx === pawn.pawnIdx - 1);
+                return teammate && !teammate.finished;
             };
 
-            if (mode === 'home') return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                    <h1 className="text-5xl font-bold mb-4">Board<span className="text-green-500">Box</span></h1>
-                    <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-                        <div onClick={() => setMode('customize')} className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl cursor-pointer">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{backgroundColor: profile.color}}>{profile.avatar}</div>
-                            <div className="font-bold">{profile.name} <i className="fa-solid fa-pencil text-gray-400 text-xs"></i></div>
-                        </div>
-                        <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
-                            <button onClick={() => setIsOnline(true)} className={`flex-1 py-2 rounded font-bold text-sm ${isOnline ? 'bg-white shadow text-blue-600' : 'text-gray-400'}`}>ONLINE</button>
-                            <button onClick={() => setIsOnline(false)} className={`flex-1 py-2 rounded font-bold text-sm ${!isOnline ? 'bg-white shadow text-green-600' : 'text-gray-400'}`}>LOCALE</button>
-                        </div>
-                        {isOnline ? (
-                            <div className="flex gap-2 mb-4">
-                                <input value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="CODICE" className="flex-1 bg-gray-100 rounded px-4 font-mono font-bold uppercase" />
-                                <button onClick={joinLobby} className="bg-blue-500 text-white font-bold px-4 py-3 rounded shadow btn-press">ENTRA</button>
+            const checkTeamWin = (players, teamId) => {
+                const teamPawns = players.filter(p => p.teamId === teamId);
+                return teamPawns.every(p => p.finished);
+            };
+
+            const executeMove = async (playerId, targetPos) => {
+                if (isMoving) return;
+                setIsMoving(true);
+                playSound('click');
+                setDirectionChoice(null); // Clear pending choice
+
+                try {
+                    const currentPlayer = currentRoom.players[currentRoom.currentTurn];
+                    if (currentPlayer.uid !== playerId && !currentPlayer.isBot) { setIsMoving(false); return; }
+
+                    const pIndex = currentRoom.currentTurn;
+                    const player = currentRoom.players[pIndex];
+                    const currentPos = player.position;
+                    const config = currentRoom.gameMode === 'elimination' ? ELIM_MAP : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP : CLASSIC_MAP);
+
+                    const steps = [];
+                    const direction = targetPos >= currentPos ? 1 : -1;
+                    const dist = Math.abs(targetPos - currentPos); 
+                    
+                    for (let i = 1; i <= dist; i++) {
+                        steps.push(currentPos + (i * direction));
+                    }
+                    
+                    let tempPlayers = [...currentRoom.players];
+                    let gemsCollectedThisTurn = [...(player.collectedGems || [])];
+                    let tempGemLocations = [...(currentRoom.gemLocations || [])];
+
+                    for (let stepPos of steps) {
+                        tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: stepPos };
+                        
+                        // Gem Hunt Collection Logic (On passing or landing)
+                        if (currentRoom.gameMode === 'gem_hunt' && tempGemLocations.includes(stepPos)) {
+                             if (!gemsCollectedThisTurn.includes(stepPos)) {
+                                 gemsCollectedThisTurn.push(stepPos);
+                                 tempPlayers[pIndex].collectedGems = gemsCollectedThisTurn;
+                                 
+                                 // Remove & Respawn
+                                 tempGemLocations = tempGemLocations.filter(g => g !== stepPos);
+                                 let newGem = -1;
+                                 while(newGem === -1 || tempGemLocations.includes(newGem) || newGem === stepPos || newGem === 0 || newGem === 50) {
+                                     newGem = Math.floor(Math.random() * 41) + 5; 
+                                 }
+                                 tempGemLocations.push(newGem);
+                                 
+                                 playSound('gem');
+                             }
+                        }
+                        
+                        let intermediateUpdate = { players: tempPlayers };
+                        if (currentRoom.gameMode === 'gem_hunt') intermediateUpdate.gemLocations = tempGemLocations;
+
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), intermediateUpdate);
+                        if (!tempGemLocations.includes(stepPos)) playSound('step'); // Don't double sound
+                        await sleep(250); 
+                    }
+
+                    let finalPos = targetPos;
+                    let log = `${player.name} (${player.pawnIdx + 1}°) è alla ${finalPos}.`;
+                    let special = config.specials[finalPos];
+                    let extraTurns = 0;
+
+                    if (special) {
+                        log += ` ${special.name}!`; 
+                        
+                        if (special.type === 'BOOST') {
+                            await sleep(500);
+                            finalPos += special.val; 
+                            // Bounds check
+                            if (finalPos < 0) finalPos = 0;
+                            if (finalPos > config.max) finalPos = config.max;
+
+                            tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
+                             // Check gem on boost landing
+                             if (currentRoom.gameMode === 'gem_hunt' && tempGemLocations.includes(finalPos)) {
+                                if (!gemsCollectedThisTurn.includes(finalPos)) {
+                                    gemsCollectedThisTurn.push(finalPos);
+                                    tempPlayers[pIndex].collectedGems = gemsCollectedThisTurn;
+                                    
+                                     // Remove & Respawn
+                                    tempGemLocations = tempGemLocations.filter(g => g !== finalPos);
+                                    let newGem = -1;
+                                    while(newGem === -1 || tempGemLocations.includes(newGem) || newGem === finalPos || newGem === 0 || newGem === 50) {
+                                        newGem = Math.floor(Math.random() * 41) + 5; 
+                                    }
+                                    tempGemLocations.push(newGem);
+                                    
+                                    playSound('gem');
+                                }
+                            }
+
+                            let boostUpdate = { players: tempPlayers };
+                            if (currentRoom.gameMode === 'gem_hunt') boostUpdate.gemLocations = tempGemLocations;
+
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), boostUpdate);
+                            playSound('step');
+                        }
+                        else if (special.type === 'JUMP' || special.type === 'BACK' || special.type === 'RESTART') {
+                            await sleep(800);
+                            finalPos = special.val || 0;
+                            tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
+                            playSound('step');
+                        }
+                        else if (special.type === 'DOUBLE') { 
+                            await sleep(800);
+                            const moveAmt = dist; 
+                            log += ` Avanza ancora di ${moveAmt}!`;
+                            
+                            finalPos = finalPos + (moveAmt * direction); 
+                            if (finalPos > config.max) finalPos = config.max;
+                            if (finalPos < 0) finalPos = 0;
+
+                            tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
+                            
+                            if (currentRoom.gameMode === 'gem_hunt' && tempGemLocations.includes(finalPos)) {
+                                if (!gemsCollectedThisTurn.includes(finalPos)) {
+                                    gemsCollectedThisTurn.push(finalPos);
+                                    tempPlayers[pIndex].collectedGems = gemsCollectedThisTurn;
+                                    
+                                     // Remove & Respawn
+                                    tempGemLocations = tempGemLocations.filter(g => g !== finalPos);
+                                    let newGem = -1;
+                                    while(newGem === -1 || tempGemLocations.includes(newGem) || newGem === finalPos || newGem === 0 || newGem === 50) {
+                                        newGem = Math.floor(Math.random() * 41) + 5; 
+                                    }
+                                    tempGemLocations.push(newGem);
+                                    
+                                    playSound('gem');
+                                }
+                            }
+                            
+                            let doubleUpdate = { players: tempPlayers };
+                            if (currentRoom.gameMode === 'gem_hunt') doubleUpdate.gemLocations = tempGemLocations;
+
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), doubleUpdate);
+                            playSound('step');
+                        }
+                        else if (special.type === 'TAIL') {
+                            await sleep(800);
+                            const sortedByPos = [...tempPlayers].filter(p => !p.isDead).sort((a,b) => b.position - a.position);
+                            const myRankIdx = sortedByPos.findIndex(p => p.id === player.id);
+                            if (myRankIdx > 0) {
+                                const targetPlayer = sortedByPos[myRankIdx - 1]; 
+                                log += ` Scatta dietro a ${targetPlayer.name}!`;
+                                finalPos = Math.max(0, targetPlayer.position - 1);
+                            }
+                            tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
+                            playSound('step');
+                        }
+                        else if (special.type === 'TELEPORT') {
+                            await sleep(800);
+                            const others = tempPlayers.filter(p => p.id !== player.id && !p.isDead && !p.finished);
+                            if (others.length > 0) {
+                                const targetP = others[Math.floor(Math.random() * others.length)];
+                                log += ` Scambio dimensionale con ${targetP.name}!`;
+                                finalPos = targetP.position;
+                                tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos };
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: tempPlayers });
+                                playSound('teleport');
+                            }
+                        }
+                        if (special.type === 'WAIT') extraTurns = special.turns;
+                    }
+
+                    tempPlayers[pIndex] = { ...tempPlayers[pIndex], position: finalPos, skipTurns: extraTurns, pendingTarget: null };
+
+                    let updates = { players: tempPlayers, lastAction: log };
+                    if (currentRoom.gameMode === 'gem_hunt') updates.gemLocations = tempGemLocations; // Final sync check
+
+                    let hasFinished = false;
+
+                    if (currentRoom.gameMode === 'gem_hunt') {
+                        // Win condition: 3 gems collected
+                        if (tempPlayers[pIndex].collectedGems.length >= 3) {
+                            tempPlayers[pIndex].finished = true;
+                            log += " HA RACCOLTO TUTTE LE GEMME!";
+                            playSound('win');
+                            hasFinished = true;
+                        }
+                    } else {
+                        // Standard win condition
+                         if (finalPos === config.max) {
+                            tempPlayers[pIndex].finished = true;
+                            log += " TRAGUARDO!";
+                            playSound('win');
+                            hasFinished = true;
+                            // RELAY UNLOCK LOGIC notification
+                            if (currentRoom.gameMode === 'relay') {
+                                const nextTeammate = tempPlayers.find(p => p.teamId === player.teamId && p.pawnIdx === player.pawnIdx + 1);
+                                if (nextTeammate) log += ` Parte il compagno ${nextTeammate.name}!`;
+                            }
+                        }
+                    }
+
+                    // CHECK WIN CONDITIONS
+                    if (currentRoom.gameMode === 'gem_hunt') {
+                        const totalPlayers = tempPlayers.length;
+                        const finishedCount = tempPlayers.filter(p => p.finished).length;
+                        
+                        // Game ends when Penultimate wins (only 1 loser remains)
+                        // Or if 1 player, when he wins.
+                        if (totalPlayers > 1 && finishedCount >= totalPlayers - 1) {
+                            updates.status = 'finished';
+                            updates.winner = "TUTTI SALVI (tranne uno!)"; 
+                            updates.lastAction = "CACCIA ALLE GEMME CONCLUSA!";
+                        } else if (totalPlayers === 1 && finishedCount === 1) {
+                             updates.status = 'finished';
+                             updates.winner = player.name;
+                        } else {
+                             updates.currentTurn = getNextTurn(tempPlayers, currentRoom.currentTurn);
+                        }
+
+                    } else if (currentRoom.gameMode === 'relay') {
+                        if (checkTeamWin(tempPlayers, player.teamId)) {
+                            updates.status = 'finished';
+                            updates.winner = `TEAM ${TEAM_COLORS[player.teamId].name}`; 
+                            updates.lastAction = `IL TEAM ${TEAM_COLORS[player.teamId].name} VINCE LA STAFFETTA!`;
+                        } else {
+                            updates.currentTurn = getNextTurn(tempPlayers, currentRoom.currentTurn);
+                        }
+                    } else if (currentRoom.gameMode === 'elimination') {
+                        const living = tempPlayers.filter(p => !p.isDead);
+                        const finished = living.filter(p => p.finished);
+                        if (finished.length === living.length - 1 && living.length > 1) {
+                            const loser = living.find(p => !p.finished);
+                            const loserIndex = tempPlayers.findIndex(p => p.id === loser.id);
+                            tempPlayers[loserIndex].isDead = true;
+                            tempPlayers[loserIndex].position = 0; 
+                            tempPlayers.forEach(p => { if (!p.isDead) { p.position = 0; p.finished = false; p.skipTurns = 0; p.pendingTarget = null; } });
+                            updates.players = tempPlayers;
+                            updates.round = currentRoom.round + 1;
+                            updates.lastAction = `${loser.name} ELIMINATO! Inizia il Round ${updates.round}!`;
+                            playSound('eliminated');
+                            updates.currentTurn = 0;
+                        } else if (living.length === 1 && living[0].finished) {
+                            updates.status = 'finished';
+                            updates.winner = living[0].name;
+                            updates.lastAction = `VITTORIA PER ${living[0].name}!`;
+                        } else {
+                            updates.currentTurn = getNextTurn(tempPlayers, currentRoom.currentTurn);
+                        }
+                    } else if (currentRoom.gameMode === 'infection') {
+                        // Classic win but watch out for zombies
+                        if (finalPos === config.max) {
+                            updates.status = 'finished';
+                            updates.winner = player.name;
+                        } else {
+                            // Check round increment for infection movement
+                            const nextTurn = getNextTurn(tempPlayers, currentRoom.currentTurn);
+                            updates.currentTurn = nextTurn;
+                            if (nextTurn === 0) {
+                                updates.round = currentRoom.round + 1;
+                            }
+                        }
+                    }
+                     else {
+                        if (finalPos === config.max) {
+                            updates.status = 'finished';
+                            updates.winner = player.name;
+                        } else {
+                            updates.currentTurn = getNextTurn(tempPlayers, currentRoom.currentTurn);
+                        }
+                    }
+
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), updates);
+                } catch (e) {
+                    handleError(e);
+                }
+                setIsMoving(false);
+            };
+
+            const confirmGemMove = async (dir) => {
+                 // Triggered from UI in Gem Hunt mode
+                 if (!directionChoice) return;
+                 const player = currentRoom.players[currentRoom.currentTurn];
+                 
+                 const config = GEM_MAP;
+                 let newPos = player.position + (directionChoice.val * dir);
+                 if (newPos > config.max) newPos = config.max;
+                 if (newPos < 0) newPos = 0;
+                 if (directionChoice.val === 0) newPos = player.position;
+
+                 const updated = [...currentRoom.players];
+                 updated[currentRoom.currentTurn] = { ...player, pendingTarget: newPos };
+
+                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                    players: updated,
+                    lastAction: `${player.name} sceglie di andare ${dir > 0 ? 'AVANTI' : 'INDIETRO'}!`
+                 });
+                 setDirectionChoice(null);
+            };
+
+            const handleRoll = async () => {
+                if (isRolling || isMoving || !currentRoom) return;
+                const player = currentRoom.players[currentRoom.currentTurn];
+                
+                if (player.uid !== user.uid && !player.isBot) return;
+                
+                try {
+                    if (isPawnLocked(player, currentRoom.players)) {
+                        const next = getNextTurn(currentRoom.players, currentRoom.currentTurn);
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                            currentTurn: next,
+                            lastAction: `${player.name} deve aspettare il compagno!`
+                        });
+                        return;
+                    }
+
+                    if (player.skipTurns > 0) {
+                        const updated = [...currentRoom.players];
+                        updated[currentRoom.currentTurn].skipTurns -= 1;
+                        const next = getNextTurn(updated, currentRoom.currentTurn);
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                            players: updated,
+                            currentTurn: next,
+                            lastAction: `${player.name} salta il turno.`
+                        });
+                        return;
+                    }
+
+                    setIsRolling(true);
+                    playSound('step');
+                    
+                    const isSpecial = useSpecialDie && !player.isBot;
+                    const specialDice = ROSTER[player.characterId].dice;
+                    
+                    for(let i=0; i<10; i++) {
+                        const animVal = isSpecial ? specialDice.vals[Math.floor(Math.random()*6)] : Math.floor(Math.random()*6)+1;
+                        setLastRoll(currentRoom.gameMode === 'gem_hunt' ? Math.abs(animVal) : animVal);
+                        await sleep(50);
+                    }
+                    
+                    let val = isSpecial ? specialDice.vals[Math.floor(Math.random() * 6)] : Math.floor(Math.random() * 6) + 1;
+                    
+                    // GEM HUNT MODIFIER
+                    if (currentRoom.gameMode === 'gem_hunt') val = Math.abs(val);
+
+                    setLastRoll(val);
+                    await sleep(200);
+
+                    if (currentRoom.gameMode === 'gem_hunt' && val !== 0 && !player.isBot) {
+                        // User needs to choose direction
+                         setDirectionChoice({ val });
+                         setIsRolling(false);
+                         return;
+                    }
+
+                    // Bot logic or linear modes
+                    const config = currentRoom.gameMode === 'elimination' ? ELIM_MAP : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP : CLASSIC_MAP);
+                    
+                    // Default direction forward for bots or non-gem modes
+                    // If gem hunt bot, random direction? Or smart? Let's say random for now.
+                    let dir = 1;
+                    if (currentRoom.gameMode === 'gem_hunt' && player.isBot) {
+                         dir = Math.random() > 0.5 ? 1 : -1;
+                    }
+
+                    let newPos = player.position + (val * dir);
+                    
+                    // No bounce logic
+                    if (newPos > config.max) newPos = config.max; 
+                    if (newPos < 0) newPos = 0;
+                    if (val === 0) newPos = player.position;
+                    
+                    const updated = [...currentRoom.players];
+                    updated[currentRoom.currentTurn] = { ...player, pendingTarget: newPos };
+                    
+                    const dieName = isSpecial ? specialDice.name : "Dado Standard";
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
+                        players: updated,
+                        lastAction: `${player.name} (${player.teamId !== undefined ? `T${player.teamId+1}` : ''}): ${val}! Vai alla ${newPos}!`
+                    });
+                } catch (e) {
+                    handleError(e);
+                }
+                setIsRolling(false);
+            };
+
+            const getNextTurn = (players, currentIdx) => {
+                let next = (currentIdx + 1) % players.length;
+                let loop = 0;
+                while(
+                    loop < players.length * 2 && 
+                    (players[next].isDead || players[next].finished || players[next].skipTurns > 0 || isPawnLocked(players[next], players))
+                ) {
+                    if (players[next].skipTurns > 0) break; 
+                    next = (next + 1) % players.length;
+                    loop++;
+                }
+                return next;
+            };
+
+            useEffect(() => {
+                if (currentRoom?.status === 'playing') {
+                    const p = currentRoom.players[currentRoom.currentTurn];
+                    if (p.isBot && currentRoom.hostId === user?.uid && !isRolling && !isMoving) {
+                        if (p.pendingTarget === null) {
+                            if (isPawnLocked(p, currentRoom.players)) {
+                                const next = getNextTurn(currentRoom.players, currentRoom.currentTurn);
+                                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { currentTurn: next })
+                                .catch(handleError);
+                            } else if (!directionChoice) { // Ensure bot doesn't hang if I add decision logic later
+                                const t = setTimeout(() => handleRoll(), 1500);
+                                return () => clearTimeout(t);
+                            }
+                        } else {
+                            const t = setTimeout(() => executeMove(p.uid, p.pendingTarget), 1500);
+                            return () => clearTimeout(t);
+                        }
+                    }
+                }
+            }, [currentRoom, isRolling, isMoving, user, directionChoice]);
+
+            if (!user) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white">Caricamento...</div>;
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col relative">
+                
+                {/* MODAL INFO CASELLA */}
+                {selectedCellInfo && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative border-4 border-indigo-200">
+                            <button onClick={()=>setSelectedCellInfo(null)} className="absolute top-2 right-2 p-1 rounded-full hover:bg-slate-100"><X size={20}/></button>
+                            <div className="flex flex-col items-center text-center gap-3">
+                                <div className="p-4 bg-indigo-50 rounded-full text-indigo-600 mb-2 scale-125">{selectedCellInfo.icon}</div>
+                                <h3 className="text-2xl font-black text-indigo-900">{selectedCellInfo.name}</h3>
+                                <p className="text-lg text-slate-600 font-medium leading-relaxed">{selectedCellInfo.desc}</p>
                             </div>
-                        ) : <div className="text-center text-gray-400 text-sm mb-4">Modalità Pass & Play</div>}
-                        <div className="space-y-2">
-                            {MODES.map(m => (
-                                <button key={m.id} onClick={() => createLobby(m.id)} className="w-full text-left p-4 rounded-xl border hover:bg-green-50 flex items-center gap-4 btn-press">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center"><i className={`fa-solid ${m.icon}`}></i></div>
-                                    <div><div className="font-bold">{m.name}</div><div className="text-xs text-gray-400">{m.desc}</div></div>
-                                </button>
-                            ))}
                         </div>
                     </div>
+                )}
+                
+                {/* ERROR BANNER */}
+                {errorMsg && (
+                    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-center p-2 z-[100] font-bold flex items-center justify-center gap-2">
+                        <AlertCircle /> {errorMsg}
+                    </div>
+                )}
+
+                {/* NAVBAR */}
+                <div className="bg-indigo-900 text-white p-3 flex justify-between items-center shadow-lg z-50">
+                    <div className="font-black text-xl flex items-center gap-2"><ArrowRight className="text-yellow-400"/> MULTIVERSE RUN</div>
+                    {currentRoom && <div className="font-mono bg-indigo-800 px-2 py-1 rounded text-xs flex items-center gap-2"><span>ROOM: {currentRoom.code}</span> {currentRoom.gameMode === 'relay' && <span className="bg-yellow-500 text-black px-1 rounded text-[10px] font-bold">STAFFETTA</span>}</div>}
+                    {view !== 'menu' && <button onClick={() => { setView('menu'); setRoomCode(''); }}><LogOut size={20}/></button>}
+                </div>
+
+                <div className={`fixed top-16 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-2 rounded-full shadow-2xl transition-all duration-300 z-50 font-bold border border-slate-600 ${notif ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}`}>
+                    {notif}
+                </div>
+
+                <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center">
+                        
+                        {view === 'menu' && (
+                        <div className="max-w-md w-full mt-10 space-y-6">
+                            <div className="text-center">
+                                <h1 className="text-4xl font-black text-indigo-900 mb-2">SCEGLI IL TUO DESTINO</h1>
+                                <p className="text-slate-500">Corsa, Sopravvivenza, Squadra o Caos?</p>
+                            </div>
+                            
+                            <input type="text" placeholder="Il tuo Nickname" className="w-full p-4 text-center text-xl font-bold rounded-xl border-2 border-slate-300 focus:border-indigo-500 outline-none" value={nickname} onChange={e=>setNickname(e.target.value)} />
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={() => createRoom('classic')} disabled={!nickname} className="h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Flag size={24}/> CLASSICA
+                                </button>
+                                <button onClick={() => createRoom('elimination')} disabled={!nickname} className="h-24 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Skull size={24}/> ELIMINAZIONE
+                                </button>
+                                <button onClick={() => createRoom('infection')} disabled={!nickname} className="h-24 bg-gradient-to-br from-lime-600 to-green-800 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Biohazard size={24}/> INFEZIONE
+                                </button>
+                                <button onClick={() => createRoom('gem_hunt')} disabled={!nickname} className="h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl text-white font-black text-sm shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Gem size={24}/> GEMME
+                                </button>
+                            </div>
+                             <button onClick={() => {
+                                    if(nickname) setView('relay_setup');
+                                }} disabled={!nickname} className="w-full py-3 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl text-white font-black text-lg shadow-xl hover:scale-105 transition-all flex flex-col items-center justify-center gap-1">
+                                    <Users size={24}/> STAFFETTA
+                                </button>
+
+                            <div className="flex gap-2">
+                                <input id="codeIn" type="text" placeholder="CODICE" className="flex-1 p-3 rounded-xl border-2 font-mono text-center uppercase font-bold"/>
+                                <button onClick={() => { setRoomCode(document.getElementById('codeIn').value); joinRoom(); }} disabled={!nickname} className="px-6 bg-slate-800 text-white font-bold rounded-xl">ENTRA</button>
+                            </div>
+                        </div>
+                        )}
+
+                        {/* ... (resto del codice simile per relay_setup e lobby) ... */}
+                        {view === 'relay_setup' && (
+                            <div className="max-w-md w-full mt-10 space-y-6 bg-white p-6 rounded-2xl shadow-xl">
+                                <h2 className="text-2xl font-black text-center text-indigo-900">CONFIGURA STAFFETTA</h2>
+                                
+                                <div>
+                                    <label className="block font-bold text-slate-500 mb-2">Numero di Team</label>
+                                    <div className="flex gap-2">
+                                        {[2,3,4].map(n => (
+                                            <button key={n} onClick={() => setRelayConfig({...relayConfig, teams: n})} className={`flex-1 py-3 rounded-lg font-bold border-2 ${relayConfig.teams === n ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200'}`}>{n}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label className="block font-bold text-slate-500 mb-2">Membri per Team</label>
+                                    <div className="flex gap-2">
+                                        {[2,3,4].map(n => (
+                                            <button key={n} onClick={() => setRelayConfig({...relayConfig, size: n})} className={`flex-1 py-3 rounded-lg font-bold border-2 ${relayConfig.size === n ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200'}`}>{n}</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button onClick={() => createRoom('relay')} className="w-full py-4 bg-green-500 text-white font-black text-xl rounded-xl shadow-lg hover:bg-green-600">CREA STANZA</button>
+                                <button onClick={() => setView('menu')} className="w-full py-2 text-slate-400 font-bold">Annulla</button>
+                            </div>
+                        )}
+
+                        {view === 'lobby' && currentRoom && (
+                        <div className="w-full max-w-6xl space-y-6">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div>
+                                    <h2 className="text-2xl font-black text-indigo-900 flex items-center gap-2">
+                                        LOBBY: {currentRoom.gameMode.toUpperCase().replace('_', ' ')}
+                                    </h2>
+                                    {currentRoom.gameMode === 'relay' && (
+                                        <p className="text-slate-500 font-medium">Config: {currentRoom.teamConfig.teams} Squadre da {currentRoom.teamConfig.size} Membri</p>
+                                    )}
+                                </div>
+                                {currentRoom.hostId === user.uid && (
+                                <div className="flex gap-2">
+                                    <button onClick={addBot} className="bg-slate-200 px-4 py-2 rounded-lg font-bold hover:bg-slate-300">AGGIUNGI BOT</button>
+                                    <button onClick={startGame} className="bg-green-500 text-white px-8 py-2 rounded-lg font-bold shadow-lg hover:bg-green-600 hover:scale-105 transition-all">START</button>
+                                </div>
+                                )}
+                            </div>
+
+                            {/* RELAY TEAM SELECTOR */}
+                            {currentRoom.gameMode === 'relay' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {Array.from({length: currentRoom.teamConfig.teams}).map((_, tIdx) => (
+                                        <div key={tIdx} className={`rounded-xl border-4 ${TEAM_COLORS[tIdx].border} bg-white overflow-hidden flex flex-col`}>
+                                            <div className={`${TEAM_COLORS[tIdx].bg} text-white p-2 font-black text-center flex justify-between items-center`}>
+                                                <span>TEAM {tIdx + 1}</span>
+                                                {currentRoom.players.find(p=>p.uid===user.uid)?.teamId !== tIdx && (
+                                                    <button onClick={() => switchTeam(tIdx)} className="bg-white/20 hover:bg-white/40 px-2 py-0.5 rounded text-xs">UNISCITI</button>
+                                                )}
+                                            </div>
+                                            <div className="p-2 space-y-2 flex-1 min-h-[100px]">
+                                                {currentRoom.players.filter(p => p.teamId === tIdx).map(p => (
+                                                    <div key={p.uid} className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border">
+                                                        <PlayerAvatar charId={p.characterId} size="sm" border={false}/>
+                                                        <span className="font-bold text-sm truncate">{p.name}</span>
+                                                    </div>
+                                                ))}
+                                                {currentRoom.players.filter(p => p.teamId === tIdx).length === 0 && (
+                                                    <div className="text-center text-slate-300 text-xs italic py-4">Nessun giocatore</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* CHARACTER SELECTOR */}
+                            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                                {ROSTER.map(c => {
+                                    const taken = currentRoom.players.some(p => p.characterId === c.id);
+                                    const mine = currentRoom.players.find(p => p.uid === user.uid)?.characterId === c.id;
+                                    return (
+                                    <button key={c.id} onClick={() => selectChar(c.id)} disabled={taken && !mine} className={`relative group aspect-[3/4] rounded-xl overflow-hidden transition-all bg-slate-100 flex flex-col items-center ${mine ? 'ring-4 ring-indigo-500 scale-105 z-10' : 'hover:scale-105'} ${taken && !mine ? 'grayscale opacity-50' : ''}`}>
+                                        <div className="flex-1 w-full overflow-hidden">
+                                            <img src={c.img} className="w-full h-full object-cover"/>
+                                        </div>
+                                        <div className={`w-full text-[8px] md:text-[10px] p-1 font-bold text-center text-white ${c.dice.color}`}>
+                                            {c.dice.name}
+                                        </div>
+                                        {mine && <div className="absolute top-1 right-1 bg-indigo-500 text-white p-0.5 rounded-full"><ArrowDown size={12}/></div>}
+                                    </button>
+                                    )
+                                })}
+                            </div>
+                            
+                            {/* CLASSIC LOBBY LIST (Only if not relay, or simplified view) */}
+                            {currentRoom.gameMode !== 'relay' && (
+                                <div className="flex flex-wrap gap-2">
+                                    {currentRoom.players.map(p => (
+                                    <div key={p.uid} className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border shadow-sm">
+                                        <PlayerAvatar charId={p.characterId} size="sm" border={false}/>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm leading-none">{p.name}</span>
+                                            <span className={`text-[10px] font-bold text-slate-500`}>Wait...</span>
+                                        </div>
+                                    </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        )}
+
+                        {view === 'game' && currentRoom && (
+                        <div className="w-full max-w-5xl flex flex-col gap-4">
+                            
+                            {/* GAME HEADER */}
+                            <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-slate-200 sticky top-0 z-30">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-center">
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase">TURNO DI</div>
+                                    <div className="font-black text-indigo-900 leading-none">
+                                        {currentRoom.players[currentRoom.currentTurn].name} 
+                                        {currentRoom.players[currentRoom.currentTurn].teamId !== undefined && (
+                                            <span className={`ml-1 px-1 rounded text-white text-[10px] ${TEAM_COLORS[currentRoom.players[currentRoom.currentTurn].teamId].bg}`}>
+                                                T{currentRoom.players[currentRoom.currentTurn].teamId + 1}
+                                            </span>
+                                        )}
+                                    </div>
+                                    </div>
+                                    <PlayerAvatar charId={currentRoom.players[currentRoom.currentTurn].characterId}/>
+                                </div>
+                                
+                                <div className="flex flex-col items-end">
+                                    {currentRoom.gameMode === 'elimination' && (
+                                        <div className="flex items-center gap-2 text-orange-600 font-black"><Flame size={18}/> ROUND {currentRoom.round}</div>
+                                    )}
+                                    {currentRoom.gameMode === 'infection' && (
+                                        <div className="flex items-center gap-2 text-lime-600 font-black"><Biohazard size={18}/> ROUND {currentRoom.round}</div>
+                                    )}
+                                     {currentRoom.gameMode === 'gem_hunt' && (
+                                        <div className="flex items-center gap-2 text-purple-600 font-black"><Gem size={18}/> CACCIA</div>
+                                    )}
+                                    {currentRoom.gameMode === 'relay' && (
+                                        <div className="flex items-center gap-2 text-blue-600 font-black"><Users size={18}/> STAFFETTA</div>
+                                    )}
+                                    <div className="text-xs text-slate-400 font-bold">
+                                        {currentRoom.gameMode === 'classic' ? 'RAGGIUNGI IL 60!' : currentRoom.gameMode === 'gem_hunt' ? 'PRENDI 3 GEMME!' : 'TUTTI AL TRAGUARDO!'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* BOARD */}
+                            <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-1.5 p-2 bg-slate-200/50 rounded-xl">
+                                {Array.from({ length: (currentRoom.gameMode === 'elimination' ? ELIM_MAP.max : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP.max : CLASSIC_MAP.max)) + 1 }).map((_, i) => {
+                                    const config = currentRoom.gameMode === 'elimination' ? ELIM_MAP : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP : CLASSIC_MAP);
+                                    const playersHere = currentRoom.players.filter(p => p.position === i && !p.isDead);
+                                    const currentPlayer = currentRoom.players[currentRoom.currentTurn];
+                                    const isPendingTarget = currentPlayer.uid === user.uid && currentPlayer.pendingTarget === i;
+                                    
+                                    return <BoardCell key={i} num={i} players={playersHere} special={config.specials[i]} 
+                                            isElimination={currentRoom.gameMode === 'elimination'}
+                                            isPendingTarget={isPendingTarget}
+                                            onCellClick={() => executeMove(user.uid, i)}
+                                            onInfoClick={(spec) => setSelectedCellInfo(spec)}
+                                            gems={currentRoom.gemLocations}
+                                            infected={currentRoom.infectedNPC}
+                                        />
+                                })}
+                            </div>
+
+                            {/* CONTROLS */}
+                            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4">
+                                {currentRoom.status === 'finished' ? (
+                                    <div className="bg-indigo-900 text-white p-6 rounded-2xl shadow-2xl text-center border-4 border-yellow-400 animate-bounce-slow">
+                                    <Trophy size={48} className="mx-auto text-yellow-400 mb-2"/>
+                                    <h2 className="text-3xl font-black">VITTORIA!</h2>
+                                    <p className="text-xl opacity-90">{currentRoom.winner}</p>
+                                    <button onClick={() => { setView('menu'); setRoomCode(''); }} className="mt-4 bg-white text-indigo-900 px-6 py-2 rounded-full font-bold">Menu</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 flex flex-col items-center">
+                                        
+                                        {/* DIRECTION CHOICE UI (GEM HUNT) */}
+                                        {directionChoice && (
+                                            <div className="w-full bg-white p-4 rounded-2xl shadow-2xl border-4 border-indigo-500 animate-in slide-in-from-bottom flex flex-col items-center gap-4">
+                                                <h3 className="font-black text-lg text-indigo-900">SCEGLI DIREZIONE</h3>
+                                                <div className="text-4xl font-black text-purple-600 mb-4 animate-bounce">
+                                                    HAI FATTO {directionChoice.val}!
+                                                </div>
+                                                <div className="flex gap-4 w-full">
+                                                    <button onClick={() => confirmGemMove(-1)} className="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold flex flex-col items-center hover:scale-105 active:scale-95 transition-all">
+                                                        <ArrowLeft size={24}/> INDIETRO
+                                                    </button>
+                                                    <button onClick={() => confirmGemMove(1)} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold flex flex-col items-center hover:scale-105 active:scale-95 transition-all">
+                                                        <ArrowRight size={24}/> AVANTI
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* DICE BUTTON */}
+                                        {!directionChoice && (
+                                            <button onClick={handleRoll} 
+                                                disabled={
+                                                    isRolling || isMoving || 
+                                                    (currentRoom.players[currentRoom.currentTurn].uid !== user.uid) || 
+                                                    currentRoom.players[currentRoom.currentTurn].pendingTarget !== null
+                                                }
+                                                className={`w-full py-4 rounded-2xl font-black text-2xl shadow-xl transition-all flex items-center justify-center gap-3 border-b-8 active:border-b-0 active:translate-y-2 relative overflow-hidden
+                                                    ${isRolling || isMoving ? 'bg-slate-300 text-slate-500 border-slate-400' : 
+                                                    (currentRoom.players[currentRoom.currentTurn].uid === user.uid 
+                                                        ? (currentRoom.players[currentRoom.currentTurn].pendingTarget !== null 
+                                                        ? 'bg-yellow-500 text-white border-yellow-700 hover:bg-yellow-400' 
+                                                        : (useSpecialDie 
+                                                                ? `${ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.color} text-white border-black/20 hover:opacity-90`
+                                                                : 'bg-orange-500 text-white border-orange-700 hover:bg-orange-400')
+                                                        )
+                                                        : 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed')}`}
+                                            >
+                                                {isRolling ? <Dice5 className="animate-spin" size={32}/> : (useSpecialDie ? <Dices size={32}/> : <Dice5 size={32}/>)}
+                                                <span className="z-10 relative">
+                                                    {isRolling ? "..." : (lastRoll ? (currentRoom.players[currentRoom.currentTurn].pendingTarget !== null ? "CLICCA LA CASELLA!" : `TIRO: ${lastRoll}`) : "TIRA IL DADO")}
+                                                </span>
+                                            </button>
+                                        )}
+                                        
+                                        {/* NEXT TURNS QUEUE UI */}
+                                        <div className="w-full bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-200 flex flex-col gap-1">
+                                            <span className="text-[10px] uppercase font-bold text-slate-400 text-center">Prossimi Turni</span>
+                                            <div className="flex justify-center gap-2 overflow-x-auto pb-1">
+                                                {Array.from({length: 3}).map((_, i) => {
+                                                    let nextIdx = currentRoom.currentTurn;
+                                                    for(let k=0; k<=i; k++) nextIdx = getNextTurn(currentRoom.players, nextIdx);
+                                                    const nextP = currentRoom.players[nextIdx];
+                                                    return (
+                                                        <div key={i} className="flex flex-col items-center opacity-70 scale-90">
+                                                            <div className="relative">
+                                                                <PlayerAvatar charId={nextP.characterId} size="sm" border={false}/>
+                                                                <span className="absolute -top-1 -right-1 bg-slate-800 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{i+1}</span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* SPECIAL DICE TOGGLE - ENHANCED */}
+                                        {currentRoom.players[currentRoom.currentTurn].uid === user.uid && currentRoom.players[currentRoom.currentTurn].pendingTarget === null && !directionChoice && (
+                                            <div className="w-full bg-white p-3 rounded-xl shadow-lg border border-slate-200 animate-in slide-in-from-bottom-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                        <div className="flex flex-col leading-tight">
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Dado Speciale</span>
+                                                            <span className={`font-black ${ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.text}`}>
+                                                                {ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.name}
+                                                            </span>
+                                                        </div>
+                                                        <button onClick={() => setUseSpecialDie(!useSpecialDie)} 
+                                                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors ${useSpecialDie ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                            {useSpecialDie ? 'ON' : 'OFF'}
+                                                        </button>
+                                                </div>
+                                                {/* VISUALIZZAZIONE RISULTATI DADO */}
+                                                <div className="flex justify-between gap-1">
+                                                    {ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.vals.map((v, idx) => (
+                                                        <div key={idx} className={`flex-1 aspect-square flex items-center justify-center rounded-md text-xs font-bold border ${v > 0 ? 'bg-green-50 border-green-200 text-green-700' : v < 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                                                            {/* Gem Hunt: Show abs values if possible, otherwise normal */}
+                                                            {currentRoom.gameMode === 'gem_hunt' ? Math.abs(v) : v}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="h-32"></div> 
+                        </div>
+                        )}
+                        
+                    </div>
+
+                    {/* SIDEBAR LEADERBOARD (UPDATED FOR TEAMS) */}
+                    {view === 'game' && currentRoom && (
+                        <div className="hidden lg:flex flex-col w-80 bg-gradient-to-b from-indigo-900 via-purple-900 to-slate-900 text-white shadow-2xl z-20 border-l border-white/10">
+                            <div className="p-5 border-b border-white/10 bg-black/20 backdrop-blur-md">
+                                <h3 className="font-black text-lg tracking-wider flex items-center gap-2"><Trophy className="text-yellow-400" size={20}/> CLASSIFICA</h3>
+                                <p className="text-xs text-white/50 font-medium uppercase tracking-widest">
+                                    {currentRoom.gameMode === 'relay' ? 'Team Race' : 'Individuale'}
+                                </p>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                {[...currentRoom.players].sort((a,b) => {
+                                    // Complex sort: Finished first, then position, unless dead
+                                    if(currentRoom.gameMode === 'relay') {
+                                        // Sort by Team first roughly? No, visualize individual runners
+                                        if (a.finished && !b.finished) return -1;
+                                        if (!a.finished && b.finished) return 1;
+                                        return b.position - a.position;
+                                    }
+                                    if(currentRoom.gameMode === 'gem_hunt') {
+                                        if(a.finished && !b.finished) return -1;
+                                        if(!a.finished && b.finished) return 1;
+                                        // Then by gems
+                                        if((a.collectedGems?.length || 0) > (b.collectedGems?.length || 0)) return -1;
+                                        if((a.collectedGems?.length || 0) < (b.collectedGems?.length || 0)) return 1;
+                                        return 0;
+                                    }
+                                    if (a.isDead && !b.isDead) return 1;
+                                    if (!a.isDead && b.isDead) return -1;
+                                    if (a.finished && !b.finished) return -1;
+                                    if (!a.finished && b.finished) return 1;
+                                    return b.position - a.position; 
+                                }).map((p, i) => {
+                                    const isMe = p.uid === user.uid;
+                                    const locked = currentRoom.gameMode === 'relay' && !p.finished && p.pawnIdx > 0 && 
+                                                   !currentRoom.players.find(tm => tm.teamId===p.teamId && tm.pawnIdx===p.pawnIdx-1)?.finished;
+
+                                    return (
+                                        <div key={p.id} className={`relative p-3 rounded-xl border backdrop-blur-sm flex items-center gap-3 transition-all
+                                            ${isMe ? 'bg-white/10 border-indigo-400' : 'bg-black/20 border-white/5'}
+                                            ${p.teamId !== undefined ? TEAM_COLORS[p.teamId].border.replace('border', 'border-l-4') : ''}
+                                            ${locked ? 'opacity-50 grayscale' : ''}
+                                            ${i === 0 ? 'ring-2 ring-yellow-400/50 bg-gradient-to-r from-yellow-500/20 to-transparent' : ''}
+                                        `}>
+                                            <div className="flex flex-col items-center justify-center w-6 mr-1">
+                                                {i === 0 ? <Medal size={20} className="text-yellow-400 drop-shadow-lg"/> : 
+                                                 i === 1 ? <span className="text-slate-300 font-black text-lg">2°</span> :
+                                                 i === 2 ? <span className="text-amber-700 font-black text-lg">3°</span> :
+                                                 <span className="text-white/40 font-bold text-sm">{i+1}°</span>}
+                                            </div>
+
+                                            <div className="relative">
+                                                <PlayerAvatar charId={p.characterId} size="sm" border={isMe}/>
+                                                {locked && <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center"><Shield size={12}/></div>}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-sm truncate flex items-center gap-2">
+                                                    {p.name}
+                                                    {p.teamId !== undefined && <span className={`text-[9px] px-1 rounded ${TEAM_COLORS[p.teamId].bg} text-white`}>T{p.teamId+1}-{p.pawnIdx+1}</span>}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 flex gap-2">
+                                                    {p.finished ? <span className="text-green-400 font-bold">ARRIVATO!</span> : locked ? 'IN ATTESA' : `CASELLA ${p.position}`}
+                                                    {currentRoom.gameMode === 'gem_hunt' && (
+                                                        <span className="text-yellow-400 flex items-center gap-0.5"><Gem size={10}/> {p.collectedGems?.length || 0}/3</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
                 </div>
             );
+        }
 
-            if (mode === 'lobby' && gameData) {
-                const activeMode = MODES.find(m => m.id === gameData.modeId);
-                const isHost = gameData.hostId === user?.uid || !isOnline;
-                let effectiveMyId = isOnline ? (user?.uid) : null;
-                if (!isOnline) {
-                    if (gameData.modeId === 4) {
-                        const round = gameData.gameState.rounds[gameData.gameState.currentRoundIndex];
-                        if (round) effectiveMyId = gameData.gameState.phase === 'setup' ? round.leaderId : round.guesserId;
-                    } else if (gameData.modeId === 7 && gameData.status === 'playing') {
-                        const p1 = gameData.players[0].id; const p2 = gameData.players[1].id;
-                        effectiveMyId = gameData.gameState.phase === 'setup' ? (gameData.gameState.setupDone.includes(p1) ? p2 : p1) : gameData.players[gameData.gameState.turnIndex]?.id;
-                    } else effectiveMyId = gameData.players[gameData.gameState.turnIndex]?.id;
-                }
-                if (gameData.status === 'playing') return (
-                    <div className="min-h-screen pb-10">
-                        <div className="bg-white p-3 shadow mb-4 flex justify-between items-center">
-                            <div className="font-bold flex items-center gap-2"><i className={`fa-solid ${activeMode.icon}`}></i> {activeMode.name}</div>
-                            <button onClick={() => {if(confirm("Uscire?")) {setMode('home'); setActiveLobbyId(null);}}} className="text-red-500 text-sm font-bold bg-red-50 px-3 py-1 rounded-full">ESCI</button>
-                        </div>
-                        {gameData.modeId === 1 && <GameFirstTo10 G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 2 && <GameGrapes G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 3 && <GameCards G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 4 && <GameGuessColor G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 5 && <GameDotsAndBoxes G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 6 && <GameRandomDots G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                        {gameData.modeId === 7 && <GameMines G={gameData.gameState} players={gameData.players} myPlayerId={effectiveMyId} updateGame={updateGame} />}
-                    </div>
-                );
-                return (
-                    <div className="min-h-screen flex flex-col items-center p-4">
-                        <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
-                            <div className="bg-indigo-600 p-6 text-white text-center"><h2 className="text-2xl font-bold">{activeMode.name}</h2>{isOnline ? <div className="mt-2 text-3xl font-mono font-bold tracking-widest bg-white/20 rounded py-1">{activeLobbyId}</div> : <div className="mt-2">Locale</div>}</div>
-                            <div className="p-6 space-y-3">{gameData.players.map(p => (<div key={p.id} className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg"><div className="w-10 h-10 rounded-full flex items-center justify-center text-xl text-white" style={{backgroundColor: p.color}}>{p.avatar}</div><div className="font-bold">{p.name}</div></div>))}
-                                {isHost ? <button onClick={startGame} disabled={gameData.players.length < activeMode.minPlayers} className={`w-full py-3 rounded-xl font-bold text-lg mt-4 ${gameData.players.length < activeMode.minPlayers ? 'bg-gray-200 text-gray-400' : 'bg-green-500 text-white btn-press'}`}>INIZIA</button> : <div className="text-center text-gray-400 mt-4 animate-pulse">In attesa dell'host...</div>}
-                                <button onClick={() => {setMode('home'); setActiveLobbyId(null);}} className="w-full text-gray-400 font-bold py-2">Esci</button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-            return <div className="text-center mt-20">Caricamento...</div>;
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const root = createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
