@@ -214,9 +214,10 @@
 
         const PlayerAvatar = ({ charId, size = "md", border = true }) => {
         const s = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-16 h-16' : 'w-10 h-10';
-        if (charId < 0 || charId >= ROSTER.length) return null;
+        // SAFETY GUARD: Use default character if out of bounds
+        const safeCharId = (charId >= 0 && charId < ROSTER.length) ? charId : 0;
         return (
-            <img src={ROSTER[charId].img} className={`${s} rounded-full object-cover ${border ? 'border-2 border-white shadow-sm' : ''}`} alt="Avatar" />
+            <img src={ROSTER[safeCharId].img} className={`${s} rounded-full object-cover ${border ? 'border-2 border-white shadow-sm' : ''}`} alt="Avatar" />
         );
         };
 
@@ -277,7 +278,7 @@
                     )}
                     
                     {players.map(p => {
-                        const teamColor = p.teamId !== undefined ? TEAM_COLORS[p.teamId].border : 'border-white';
+                        const teamColor = p.teamId !== undefined && TEAM_COLORS[p.teamId] ? TEAM_COLORS[p.teamId].border : 'border-white';
                         return (
                             <div key={p.id} className={`relative transition-all duration-300 ${p.finished || p.isDead ? 'opacity-50 scale-75' : 'hover:scale-125 hover:z-20'}`}>
                                 <div className={`rounded-full border-2 ${teamColor} p-[1px]`}>
@@ -473,13 +474,18 @@
                 }
             };
 
-            const joinRoom = async () => {
-                if (!nickname || !user || !roomCode) return;
+            const joinRoom = async (codeOverride) => {
+                // FIXED: Use codeOverride directly to avoid async state issues
+                const codeToJoin = codeOverride || roomCode;
+                if (!nickname || !user || !codeToJoin) return;
+
                 try {
-                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode.toUpperCase());
+                    const cleanCode = codeToJoin.toUpperCase().trim();
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'matches', cleanCode);
                     const snap = await getDoc(ref);
+                    
                     if (!snap.exists()) {
-                        setErrorMsg("Stanza non trovata!");
+                        setErrorMsg(`Stanza ${cleanCode} non trovata!`);
                         return;
                     }
                     
@@ -488,6 +494,10 @@
                         setErrorMsg("La partita è già iniziata!");
                         return;
                     }
+
+                    // Success! Update local state to match
+                    setRoomCode(cleanCode);
+
                     if (data.players.some(p => p.uid === user.uid)) { setView('lobby'); return; }
 
                     const available = ROSTER.map(c=>c.id).filter(id => !data.players.some(p=>p.characterId === id));
@@ -540,7 +550,10 @@
             const selectChar = async (charId) => {
                 if (!currentRoom) return;
                 try {
-                    if (currentRoom.players.some(p => p.characterId === charId)) return;
+                    // Double check to ensure we don't overwrite if someone else took it
+                    if (currentRoom.players.some(p => p.characterId === charId && p.uid !== user.uid)) return;
+                    
+                    // Force update only for current user
                     const updated = currentRoom.players.map(p => p.uid === user.uid ? { ...p, characterId: charId } : p);
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), { players: updated });
                 } catch (e) {
@@ -992,7 +1005,9 @@
                     playSound('step');
                     
                     const isSpecial = useSpecialDie && !player.isBot;
-                    const specialDice = ROSTER[player.characterId].dice;
+                    // SAFETY: default to charId 0 if invalid
+                    const charId = (player.characterId >= 0 && player.characterId < ROSTER.length) ? player.characterId : 0;
+                    const specialDice = ROSTER[charId].dice;
                     
                     for(let i=0; i<10; i++) {
                         const animVal = isSpecial ? specialDice.vals[Math.floor(Math.random()*6)] : Math.floor(Math.random()*6)+1;
@@ -1035,7 +1050,6 @@
                     const updated = [...currentRoom.players];
                     updated[currentRoom.currentTurn] = { ...player, pendingTarget: newPos };
                     
-                    const dieName = isSpecial ? specialDice.name : "Dado Standard";
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', roomCode), {
                         players: updated,
                         lastAction: `${player.name} (${player.teamId !== undefined ? `T${player.teamId+1}` : ''}): ${val}! Vai alla ${newPos}!`
@@ -1062,6 +1076,9 @@
 
             useEffect(() => {
                 if (currentRoom?.status === 'playing') {
+                    // SAFETY: check if player exists
+                    if (!currentRoom.players || !currentRoom.players[currentRoom.currentTurn]) return;
+
                     const p = currentRoom.players[currentRoom.currentTurn];
                     if (p.isBot && currentRoom.hostId === user?.uid && !isRolling && !isMoving) {
                         if (p.pendingTarget === null) {
@@ -1082,6 +1099,15 @@
             }, [currentRoom, isRolling, isMoving, user, directionChoice]);
 
             if (!user) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white">Caricamento...</div>;
+
+            // SAFETY: prepare current player helper
+            const currentPlayer = (currentRoom && currentRoom.players && currentRoom.players[currentRoom.currentTurn]) 
+                ? currentRoom.players[currentRoom.currentTurn] 
+                : null;
+            
+            const currentPlayerChar = currentPlayer 
+                ? ((currentPlayer.characterId >= 0 && currentPlayer.characterId < ROSTER.length) ? ROSTER[currentPlayer.characterId] : ROSTER[0]) 
+                : ROSTER[0];
 
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col relative">
@@ -1152,7 +1178,10 @@
 
                             <div className="flex gap-2">
                                 <input id="codeIn" type="text" placeholder="CODICE" className="flex-1 p-3 rounded-xl border-2 font-mono text-center uppercase font-bold"/>
-                                <button onClick={() => { setRoomCode(document.getElementById('codeIn').value); joinRoom(); }} disabled={!nickname} className="px-6 bg-slate-800 text-white font-bold rounded-xl">ENTRA</button>
+                                <button onClick={() => { 
+                                    const val = document.getElementById('codeIn').value.toUpperCase().trim();
+                                    joinRoom(val); 
+                                }} disabled={!nickname} className="px-6 bg-slate-800 text-white font-bold rounded-xl">ENTRA</button>
                             </div>
                         </div>
                         )}
@@ -1232,12 +1261,13 @@
                             )}
 
                             {/* CHARACTER SELECTOR */}
+                            <div className="w-full text-center text-slate-400 font-bold text-sm tracking-widest uppercase mb-2">Clicca per cambiare</div>
                             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                                 {ROSTER.map(c => {
                                     const taken = currentRoom.players.some(p => p.characterId === c.id);
                                     const mine = currentRoom.players.find(p => p.uid === user.uid)?.characterId === c.id;
                                     return (
-                                    <button key={c.id} onClick={() => selectChar(c.id)} disabled={taken && !mine} className={`relative group aspect-[3/4] rounded-xl overflow-hidden transition-all bg-slate-100 flex flex-col items-center ${mine ? 'ring-4 ring-indigo-500 scale-105 z-10' : 'hover:scale-105'} ${taken && !mine ? 'grayscale opacity-50' : ''}`}>
+                                    <button key={c.id} onClick={() => selectChar(c.id)} disabled={taken && !mine} className={`relative group aspect-[3/4] rounded-xl overflow-hidden transition-all bg-slate-100 flex flex-col items-center ${mine ? 'ring-4 ring-indigo-500 scale-105 z-10' : 'hover:scale-105 hover:ring-2 hover:ring-indigo-300'} ${taken && !mine ? 'grayscale opacity-50' : ''}`}>
                                         <div className="flex-1 w-full overflow-hidden">
                                             <img src={c.img} className="w-full h-full object-cover"/>
                                         </div>
@@ -1267,7 +1297,7 @@
                         </div>
                         )}
 
-                        {view === 'game' && currentRoom && (
+                        {view === 'game' && currentRoom && currentPlayer && (
                         <div className="w-full max-w-5xl flex flex-col gap-4">
                             
                             {/* GAME HEADER */}
@@ -1276,15 +1306,15 @@
                                     <div className="text-center">
                                     <div className="text-[10px] text-slate-400 font-bold uppercase">TURNO DI</div>
                                     <div className="font-black text-indigo-900 leading-none">
-                                        {currentRoom.players[currentRoom.currentTurn].name} 
-                                        {currentRoom.players[currentRoom.currentTurn].teamId !== undefined && (
-                                            <span className={`ml-1 px-1 rounded text-white text-[10px] ${TEAM_COLORS[currentRoom.players[currentRoom.currentTurn].teamId].bg}`}>
-                                                T{currentRoom.players[currentRoom.currentTurn].teamId + 1}
+                                        {currentPlayer.name} 
+                                        {currentPlayer.teamId !== undefined && TEAM_COLORS[currentPlayer.teamId] && (
+                                            <span className={`ml-1 px-1 rounded text-white text-[10px] ${TEAM_COLORS[currentPlayer.teamId].bg}`}>
+                                                T{currentPlayer.teamId + 1}
                                             </span>
                                         )}
                                     </div>
                                     </div>
-                                    <PlayerAvatar charId={currentRoom.players[currentRoom.currentTurn].characterId}/>
+                                    <PlayerAvatar charId={currentPlayer.characterId}/>
                                 </div>
                                 
                                 <div className="flex flex-col items-end">
@@ -1311,7 +1341,7 @@
                                 {Array.from({ length: (currentRoom.gameMode === 'elimination' ? ELIM_MAP.max : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP.max : CLASSIC_MAP.max)) + 1 }).map((_, i) => {
                                     const config = currentRoom.gameMode === 'elimination' ? ELIM_MAP : (currentRoom.gameMode === 'gem_hunt' ? GEM_MAP : CLASSIC_MAP);
                                     const playersHere = currentRoom.players.filter(p => p.position === i && !p.isDead);
-                                    const currentPlayer = currentRoom.players[currentRoom.currentTurn];
+                                    // Safety: currentPlayer is defined by parent check
                                     const isPendingTarget = currentPlayer.uid === user.uid && currentPlayer.pendingTarget === i;
                                     
                                     return <BoardCell key={i} num={i} players={playersHere} special={config.specials[i]} 
@@ -1360,23 +1390,23 @@
                                             <button onClick={handleRoll} 
                                                 disabled={
                                                     isRolling || isMoving || 
-                                                    (currentRoom.players[currentRoom.currentTurn].uid !== user.uid) || 
-                                                    currentRoom.players[currentRoom.currentTurn].pendingTarget !== null
+                                                    (currentPlayer.uid !== user.uid) || 
+                                                    currentPlayer.pendingTarget !== null
                                                 }
                                                 className={`w-full py-4 rounded-2xl font-black text-2xl shadow-xl transition-all flex items-center justify-center gap-3 border-b-8 active:border-b-0 active:translate-y-2 relative overflow-hidden
                                                     ${isRolling || isMoving ? 'bg-slate-300 text-slate-500 border-slate-400' : 
-                                                    (currentRoom.players[currentRoom.currentTurn].uid === user.uid 
-                                                        ? (currentRoom.players[currentRoom.currentTurn].pendingTarget !== null 
+                                                    (currentPlayer.uid === user.uid 
+                                                        ? (currentPlayer.pendingTarget !== null 
                                                         ? 'bg-yellow-500 text-white border-yellow-700 hover:bg-yellow-400' 
                                                         : (useSpecialDie 
-                                                                ? `${ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.color} text-white border-black/20 hover:opacity-90`
+                                                                ? `${currentPlayerChar.dice.color} text-white border-black/20 hover:opacity-90`
                                                                 : 'bg-orange-500 text-white border-orange-700 hover:bg-orange-400')
                                                         )
                                                         : 'bg-slate-100 text-slate-400 border-slate-300 cursor-not-allowed')}`}
                                             >
                                                 {isRolling ? <Dice5 className="animate-spin" size={32}/> : (useSpecialDie ? <Dices size={32}/> : <Dice5 size={32}/>)}
                                                 <span className="z-10 relative">
-                                                    {isRolling ? "..." : (lastRoll ? (currentRoom.players[currentRoom.currentTurn].pendingTarget !== null ? "CLICCA LA CASELLA!" : `TIRO: ${lastRoll}`) : "TIRA IL DADO")}
+                                                    {isRolling ? "..." : (lastRoll ? (currentPlayer.pendingTarget !== null ? "CLICCA LA CASELLA!" : `TIRO: ${lastRoll}`) : "TIRA IL DADO")}
                                                 </span>
                                             </button>
                                         )}
@@ -1389,6 +1419,8 @@
                                                     let nextIdx = currentRoom.currentTurn;
                                                     for(let k=0; k<=i; k++) nextIdx = getNextTurn(currentRoom.players, nextIdx);
                                                     const nextP = currentRoom.players[nextIdx];
+                                                    // SAFETY GUARD
+                                                    if (!nextP) return null;
                                                     return (
                                                         <div key={i} className="flex flex-col items-center opacity-70 scale-90">
                                                             <div className="relative">
@@ -1402,13 +1434,13 @@
                                         </div>
 
                                         {/* SPECIAL DICE TOGGLE - ENHANCED */}
-                                        {currentRoom.players[currentRoom.currentTurn].uid === user.uid && currentRoom.players[currentRoom.currentTurn].pendingTarget === null && !directionChoice && (
+                                        {currentPlayer.uid === user.uid && currentPlayer.pendingTarget === null && !directionChoice && (
                                             <div className="w-full bg-white p-3 rounded-xl shadow-lg border border-slate-200 animate-in slide-in-from-bottom-2">
                                                 <div className="flex justify-between items-center mb-2">
                                                         <div className="flex flex-col leading-tight">
                                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Dado Speciale</span>
-                                                            <span className={`font-black ${ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.text}`}>
-                                                                {ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.name}
+                                                            <span className={`font-black ${currentPlayerChar.dice.text}`}>
+                                                                {currentPlayerChar.dice.name}
                                                             </span>
                                                         </div>
                                                         <button onClick={() => setUseSpecialDie(!useSpecialDie)} 
@@ -1418,7 +1450,7 @@
                                                 </div>
                                                 {/* VISUALIZZAZIONE RISULTATI DADO */}
                                                 <div className="flex justify-between gap-1">
-                                                    {ROSTER[currentRoom.players[currentRoom.currentTurn].characterId].dice.vals.map((v, idx) => (
+                                                    {currentPlayerChar.dice.vals.map((v, idx) => (
                                                         <div key={idx} className={`flex-1 aspect-square flex items-center justify-center rounded-md text-xs font-bold border ${v > 0 ? 'bg-green-50 border-green-200 text-green-700' : v < 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                                                             {/* Gem Hunt: Show abs values if possible, otherwise normal */}
                                                             {currentRoom.gameMode === 'gem_hunt' ? Math.abs(v) : v}
@@ -1470,13 +1502,15 @@
                                     return b.position - a.position; 
                                 }).map((p, i) => {
                                     const isMe = p.uid === user.uid;
+                                    // SAFETY: check team colors existence
+                                    const teamColor = p.teamId !== undefined && TEAM_COLORS[p.teamId] ? TEAM_COLORS[p.teamId] : null;
                                     const locked = currentRoom.gameMode === 'relay' && !p.finished && p.pawnIdx > 0 && 
                                                    !currentRoom.players.find(tm => tm.teamId===p.teamId && tm.pawnIdx===p.pawnIdx-1)?.finished;
 
                                     return (
                                         <div key={p.id} className={`relative p-3 rounded-xl border backdrop-blur-sm flex items-center gap-3 transition-all
                                             ${isMe ? 'bg-white/10 border-indigo-400' : 'bg-black/20 border-white/5'}
-                                            ${p.teamId !== undefined ? TEAM_COLORS[p.teamId].border.replace('border', 'border-l-4') : ''}
+                                            ${teamColor ? teamColor.border.replace('border', 'border-l-4') : ''}
                                             ${locked ? 'opacity-50 grayscale' : ''}
                                             ${i === 0 ? 'ring-2 ring-yellow-400/50 bg-gradient-to-r from-yellow-500/20 to-transparent' : ''}
                                         `}>
@@ -1494,7 +1528,7 @@
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-sm truncate flex items-center gap-2">
                                                     {p.name}
-                                                    {p.teamId !== undefined && <span className={`text-[9px] px-1 rounded ${TEAM_COLORS[p.teamId].bg} text-white`}>T{p.teamId+1}-{p.pawnIdx+1}</span>}
+                                                    {teamColor && <span className={`text-[9px] px-1 rounded ${teamColor.bg} text-white`}>T{p.teamId+1}-{p.pawnIdx+1}</span>}
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 flex gap-2">
                                                     {p.finished ? <span className="text-green-400 font-bold">ARRIVATO!</span> : locked ? 'IN ATTESA' : `CASELLA ${p.position}`}
